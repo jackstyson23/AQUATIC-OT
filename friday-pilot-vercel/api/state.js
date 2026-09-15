@@ -1,13 +1,12 @@
 // Shared state store for Friday Pilot.
 //
 // One JSON blob per "section" (weeks, pool, demand, referrals, notes,
-// financial, growth, exitThreshold, brainstorm), stored in a Redis-compatible
-// key-value store via its REST API. Works with Vercel's "KV" / "Upstash for
-// Redis" storage integration out of the box: once you add that integration
-// to your Vercel project (Storage tab -> Create Database), it sets the
-// KV_REST_API_URL and KV_REST_API_TOKEN environment variables automatically
-// and this file picks them up on the next deploy. No npm dependency needed —
-// this only uses the fetch that's already built into the Node runtime.
+// financial, growth, exitThreshold, brainstorm), stored in Redis. Works with
+// Vercel's "Redis" storage integration (Storage tab -> Create Database ->
+// Redis): once you connect that database to this project, it sets a
+// REDIS_URL environment variable and this file picks it up on the next
+// deploy. Needs the "redis" package from package.json (Vercel installs it
+// automatically at deploy time).
 //
 // GET  /api/state                 -> { state: { <section>: <value>, ... } }
 // GET  /api/state?section=pool    -> { value: <value> }
@@ -17,21 +16,35 @@
 // variable in the Vercel dashboard and every request must carry a matching
 // "x-app-password" header, or it gets a 401.
 
+const { createClient } = require("redis");
+
 const SECTIONS = [
   "weeks", "pool", "demand", "referrals", "notes",
   "financial", "growth", "exitThreshold", "brainstorm"
 ];
 const KEY_PREFIX = "fridaypilot:";
 
+// Reuse one connection across warm invocations of the same function instance.
+let clientPromise = null;
+function getClient() {
+  if (!clientPromise) {
+    const client = createClient({ url: process.env.REDIS_URL });
+    client.on("error", () => {}); // swallow background errors so they don't crash the process
+    clientPromise = client.connect().then(
+      () => client,
+      (err) => { clientPromise = null; throw err; }
+    );
+  }
+  return clientPromise;
+}
+
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
 
-  const KV_URL = process.env.KV_REST_API_URL;
-  const KV_TOKEN = process.env.KV_REST_API_TOKEN;
-  if (!KV_URL || !KV_TOKEN) {
+  if (!process.env.REDIS_URL) {
     res.status(503).json({
       error: "storage_not_configured",
-      message: "Add a KV / Upstash Redis storage integration in the Vercel dashboard (Storage tab -> Create Database), then redeploy."
+      message: "Add a Redis storage integration in the Vercel dashboard (Storage tab -> Create Database -> Redis), connect it to this project, then redeploy."
     });
     return;
   }
@@ -45,29 +58,9 @@ module.exports = async (req, res) => {
     }
   }
 
-  async function kv(command) {
-    const r = await fetch(KV_URL, {
-      method: "POST",
-      headers: { Authorization: "Bearer " + KV_TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify(command)
-    });
-    if (!r.ok) throw new Error("kv_http_" + r.status);
-    const data = await r.json();
-    return data.result;
-  }
-
-  async function kvPipeline(commands) {
-    const r = await fetch(KV_URL + "/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + KV_TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify(commands)
-    });
-    if (!r.ok) throw new Error("kv_http_" + r.status);
-    const data = await r.json();
-    return data.map((entry) => entry.result);
-  }
-
   try {
+    const client = await getClient();
+
     if (req.method === "GET") {
       const section = req.query && req.query.section;
 
@@ -76,17 +69,17 @@ module.exports = async (req, res) => {
           res.status(400).json({ error: "invalid_section" });
           return;
         }
-        const raw = await kv(["GET", KEY_PREFIX + section]);
+        const raw = await client.get(KEY_PREFIX + section);
         let value = null;
         try { value = raw ? JSON.parse(raw) : null; } catch (e) { value = null; }
         res.status(200).json({ value });
         return;
       }
 
-      const results = await kvPipeline(SECTIONS.map((s) => ["GET", KEY_PREFIX + s]));
+      const raws = await client.mGet(SECTIONS.map((s) => KEY_PREFIX + s));
       const state = {};
       SECTIONS.forEach((s, i) => {
-        try { state[s] = results[i] ? JSON.parse(results[i]) : null; }
+        try { state[s] = raws[i] ? JSON.parse(raws[i]) : null; }
         catch (e) { state[s] = null; }
       });
       res.status(200).json({ state });
@@ -101,7 +94,7 @@ module.exports = async (req, res) => {
         return;
       }
       const value = body.value === undefined ? null : body.value;
-      await kv(["SET", KEY_PREFIX + section, JSON.stringify(value)]);
+      await client.set(KEY_PREFIX + section, JSON.stringify(value));
       res.status(200).json({ ok: true });
       return;
     }
