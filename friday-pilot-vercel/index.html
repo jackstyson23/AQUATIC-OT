@@ -1191,7 +1191,7 @@ function viewExit(){
 
 function noteComposer(){
   return '<div style="margin-top:12px">'+
-    '<textarea class="field editable" id="noteComposer" placeholder="'+(identity?"Write a note for "+(identity==="Judy"?"Emelia":"Judy")+"…":"Set your name in the sidebar first…")+'" '+(identity?"":"disabled")+'></textarea>'+
+    '<textarea class="field editable" id="noteComposer" data-action="noteComposer" placeholder="'+(identity?"Write a note for "+(identity==="Judy"?"Emelia":"Judy")+"…":"Set your name in the sidebar first…")+'" '+(identity?"":"disabled")+'></textarea>'+
     '<div style="margin-top:8px;text-align:right"><button class="btn primary small" data-action="sendNote" '+(identity?"":"disabled")+'>Send note</button></div>'+
   '</div>';
 }
@@ -1361,12 +1361,18 @@ content.addEventListener("change", function(e){
   }
 });
 
-var GUARDED_ACTIONS = ["weekNotes","brainstorm","growthNotes","gutNotes"];
+var GUARDED_ACTIONS = ["weekNotes","brainstorm","growthNotes","gutNotes","noteComposer"];
 function isGuardedField(el){
   return el && el.tagName==="TEXTAREA" && GUARDED_ACTIONS.indexOf(el.getAttribute("data-action"))>-1;
 }
 content.addEventListener("focusin", function(e){ if(isGuardedField(e.target)) typingGuard = true; });
-content.addEventListener("focusout", function(e){ if(isGuardedField(e.target)){ typingGuard = false; renderView(); } }, true);
+content.addEventListener("focusout", function(e){
+  // Don't re-render synchronously here: a click on a nearby button (e.g. "Send
+  // note") blurs this field first, and re-rendering mid-click would replace
+  // the button before its click event finishes, silently swallowing the click.
+  // The next poll (up to 5s later) picks the view back up once typing stops.
+  if(isGuardedField(e.target)) typingGuard = false;
+}, true);
 
 var debouncedWeekNotes = debounce(function(n, text){
   mutateSection("weeks", function(fresh){
