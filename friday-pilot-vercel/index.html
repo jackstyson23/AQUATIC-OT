@@ -239,6 +239,7 @@
   .grid-cell.coral{background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border)}
   .grid-cell .cell-main{font-weight:600;font-size:13px}
   .grid-cell .cell-sub{font-size:10.5px;opacity:.75;margin-top:2px}
+  .grid-cell .cell-breakdown{font-size:9px;opacity:.6;margin-top:3px;padding-top:3px;border-top:1px solid currentColor}
   .grid-cell .cell-warn{font-size:9.5px;margin-top:3px;font-family:var(--font-body);font-weight:600}
   .axis-label{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 
@@ -1114,16 +1115,19 @@ function viewGrid(){
       var mileagePerDay = f.miles*f.mileageRate;
       var fixedPerMonth = f.insurance+f.software+f.supplies;
       var monthlyRevenue = revenuePerDay*workDaysPerMonth;
-      var monthlyVariable = (poolCostPerDay+processingPerDay+mileagePerDay)*workDaysPerMonth;
-      var monthlyProfit = monthlyRevenue-monthlyVariable-fixedPerMonth;
+      var monthlyCosts = (poolCostPerDay+processingPerDay+mileagePerDay)*workDaysPerMonth + fixedPerMonth;
+      var monthlyProfit = monthlyRevenue-monthlyCosts;
       var annualProfit = monthlyProfit*12; // pre-tax, so it's comparable to Beach Kids' pre-tax comp
       var cls = annualProfit>=f.beachKidsComp ? "green" : (annualProfit>=0 ? "gold" : "coral");
       var primary = gridPrimaryMetric==="monthly" ? monthlyProfit : annualProfit;
       var secondary = gridPrimaryMetric==="monthly" ? annualProfit : monthlyProfit;
       var secLabel = gridPrimaryMetric==="monthly" ? "yr" : "mo";
+      var breakdownRevenue = gridPrimaryMetric==="monthly" ? monthlyRevenue : monthlyRevenue*12;
+      var breakdownCosts = gridPrimaryMetric==="monthly" ? monthlyCosts : monthlyCosts*12;
       return '<td class="grid-cell '+cls+'">'+
         '<div class="cell-main tnum">'+money(primary)+'</div>'+
         '<div class="cell-sub tnum">'+money(secondary)+' /'+secLabel+'</div>'+
+        '<div class="cell-breakdown tnum">'+money(breakdownRevenue)+' − '+money(breakdownCosts)+'</div>'+
         (annualProfit<0?'<div class="cell-warn">loses money at this pace</div>':'')+
         '</td>';
     }).join("");
@@ -1152,7 +1156,7 @@ function viewGrid(){
       '<table class="grid-table"><thead><tr><th></th>'+colHeads+'</tr></thead><tbody>'+body+'</tbody></table>'+
     '</div>'+
     '<p class="helptext" style="margin-top:10px"><b>This compares pre-tax to pre-tax:</b> every dollar figure above is business profit before Emelia\'s own income tax comes out, matched against Beach Kids’ pre-tax total comp — so it’s an apples-to-apples "which paycheck is bigger before taxes" comparison, not a real take-home number. Her actual spending money after ~'+num(f.taxPct)+'% tax set-aside will be lower than what’s shown here on both sides.</p>'+
-    '<p class="helptext" style="margin-top:6px">Sessions/day (rows) assume ~1 clinical hour each; fixed overhead ($'+num(f.insurance+f.software+f.supplies)+'/mo) is spread across the month regardless of pace, which is why very low-volume cells can still run negative &mdash; that is a real breakeven signal, not a display error.</p>'+
+    '<p class="helptext" style="margin-top:6px">Sessions/day (rows) assume ~1 clinical hour each; fixed overhead ($'+num(f.insurance+f.software+f.supplies)+'/mo) is spread across the month regardless of pace, which is why very low-volume cells can still run negative &mdash; that is a real breakeven signal, not a display error. The small line at the bottom of each cell is revenue minus costs (pool + processing + mileage + fixed overhead) at the same monthly/annual basis as the number above it.</p>'+
   '</div>';
 }
 
