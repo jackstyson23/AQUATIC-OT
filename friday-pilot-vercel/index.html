@@ -1,0 +1,1469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Friday Pilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F8F7;
+    --surface:#FFFFFF;
+    --surface-alt:#EAF3F1;
+    --border:#D7E5E2;
+    --border-soft:#E4EEEC;
+    --text:#122926;
+    --text-muted:#5A716D;
+    --text-faint:#8AA09B;
+    --brand:#0E5C57;
+    --brand-dark:#0A403D;
+    --brand-ink:#F2FAF8;
+    --accent:#178C82;
+    --gold:#9C7521;
+    --gold-bg:#FBEEC9;
+    --gold-border:#EBD693;
+    --coral:#B14A34;
+    --coral-bg:#F6E1DB;
+    --coral-border:#E9C1B4;
+    --green:#276B45;
+    --green-bg:#DCEFE1;
+    --green-border:#B9DDC3;
+    --input-bg:#FCF7DE;
+    --input-border:#E8D98C;
+    --shadow:0 1px 2px rgba(10,40,37,.06), 0 6px 20px -8px rgba(10,40,37,.14);
+    --radius-s:6px;
+    --radius-m:10px;
+    --radius-l:16px;
+    --font-display:'Fraunces',ui-serif,Georgia,serif;
+    --font-body:'Source Sans 3',ui-sans-serif,system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0B1715; --surface:#112320; --surface-alt:#152E29; --border:#22443D; --border-soft:#1C3B35;
+      --text:#E6F2EF; --text-muted:#8FB0AA; --text-faint:#628079; --brand:#57C6BA; --brand-dark:#3A9B90;
+      --brand-ink:#08201C; --accent:#4FD1C1; --gold:#E4BA5E; --gold-bg:#3A2E13; --gold-border:#5C481E;
+      --coral:#E8896C; --coral-bg:#3B2018; --coral-border:#5C3226; --green:#7BD69B; --green-bg:#163826;
+      --green-border:#265640; --input-bg:#2C2712; --input-border:#544819;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 24px -8px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0B1715; --surface:#112320; --surface-alt:#152E29; --border:#22443D; --border-soft:#1C3B35;
+    --text:#E6F2EF; --text-muted:#8FB0AA; --text-faint:#628079; --brand:#57C6BA; --brand-dark:#3A9B90;
+    --brand-ink:#08201C; --accent:#4FD1C1; --gold:#E4BA5E; --gold-bg:#3A2E13; --gold-border:#5C481E;
+    --coral:#E8896C; --coral-bg:#3B2018; --coral-border:#5C3226; --green:#7BD69B; --green-bg:#163826;
+    --green-border:#265640; --input-bg:#2C2712; --input-border:#544819;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 24px -8px rgba(0,0,0,.5);
+  }
+
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);
+    font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;text-wrap:balance;margin:0}
+  a{color:var(--accent)}
+  button{font-family:inherit}
+  input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
+  .tnum{font-variant-numeric:tabular-nums}
+  .mono{font-family:var(--font-mono)}
+
+  #app{display:flex;min-height:100vh}
+  #app[hidden]{display:none}
+
+  .sidebar{
+    width:248px;flex:none;background:var(--brand-dark);color:var(--brand-ink);
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+  }
+  .brand{padding:22px 20px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.12)}
+  .brand svg{flex:none}
+  .brand-name{font-family:var(--font-display);font-weight:700;font-size:19px;color:#fff;letter-spacing:.2px}
+  .brand-tag{font-size:11px;color:rgba(242,250,248,.62);margin-top:1px}
+  nav.navlist{flex:1;overflow-y:auto;padding:14px 10px}
+  .navitem{
+    display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:var(--radius-s);
+    cursor:pointer;color:rgba(242,250,248,.82);margin-bottom:2px;user-select:none;border:1px solid transparent;
+  }
+  .navitem:hover{background:rgba(255,255,255,.07)}
+  .navitem.active{background:rgba(255,255,255,.13);color:#fff;border-color:rgba(255,255,255,.1)}
+  .navitem .mono-badge{
+    flex:none;width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.1);
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);
+    font-size:10px;font-weight:600;letter-spacing:.02em;color:rgba(242,250,248,.9);
+  }
+  .navitem.active .mono-badge{background:var(--accent);color:#06231f}
+  .navitem span.label{font-size:13.5px;font-weight:500}
+
+  .sidebar-foot{padding:14px 16px 18px;border-top:1px solid rgba(255,255,255,.12);font-size:12px}
+  .stage-chip{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:rgba(255,255,255,.08);border-radius:var(--radius-s);padding:8px 10px;margin-bottom:12px;
+  }
+  .stage-chip b{color:#fff;font-size:12.5px}
+  .sync-row{display:flex;align-items:center;gap:6px;color:rgba(242,250,248,.65);margin-bottom:10px}
+  .sync-dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .sync-dot.live{background:#5FE0A6;box-shadow:0 0 0 3px rgba(95,224,166,.18)}
+  .sync-dot.local{background:#E4BA5E;box-shadow:0 0 0 3px rgba(228,186,94,.18)}
+  .sync-dot.err{background:#E8896C;box-shadow:0 0 0 3px rgba(232,137,108,.18)}
+  .identity-row{display:flex;align-items:center;gap:8px}
+  .identity-name{color:#fff;font-weight:600;cursor:pointer;border-bottom:1px dashed rgba(255,255,255,.4)}
+  .identity-input{
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;
+    border-radius:5px;padding:4px 7px;font-size:12px;width:118px;
+  }
+  .identity-input::placeholder{color:rgba(255,255,255,.5)}
+
+  .banner{
+    position:sticky;top:0;z-index:30;background:var(--gold-bg);color:var(--gold);border-bottom:1px solid var(--gold-border);
+    padding:9px 20px;font-size:13px;font-weight:600;text-align:center;
+  }
+  .banner[hidden]{display:none}
+
+  .content{flex:1;min-width:0;padding:34px 40px 60px;max-width:1180px}
+  .view-head{margin-bottom:26px}
+  .view-eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+  .view-title{font-size:29px;margin-top:4px}
+  .view-sub{color:var(--text-muted);margin-top:6px;max-width:64ch;font-size:14px}
+
+  .card{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-l);box-shadow:var(--shadow);padding:22px 24px}
+  .stack{display:flex;flex-direction:column;gap:18px}
+  .row{display:flex;gap:18px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:920px){.grid-3{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}}
+
+  .stat-tile{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-m);padding:16px 18px}
+  .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600}
+  .stat-value{font-family:var(--font-mono);font-size:24px;font-weight:600;margin-top:6px}
+  .stat-value.pos{color:var(--green)}
+  .stat-value.neg{color:var(--coral)}
+  .stat-note{font-size:12px;color:var(--text-faint);margin-top:3px}
+
+  .pill{
+    display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;
+    padding:3px 10px;border-radius:99px;border:1px solid transparent;white-space:nowrap;
+  }
+  .pill.complete{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+  .pill.progress{background:var(--gold-bg);color:var(--gold);border-color:var(--gold-border)}
+  .pill.notstarted{background:var(--surface-alt);color:var(--text-muted);border-color:var(--border)}
+  .pill.flag{background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border)}
+
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;border-radius:var(--radius-s);border:1px solid var(--border);
+    background:var(--surface);color:var(--text);padding:8px 14px;font-size:13.5px;font-weight:600;cursor:pointer;line-height:1.2;
+  }
+  .btn:hover{background:var(--surface-alt)}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-dark)}
+  .btn.ghost{border-color:transparent;background:transparent}
+  .btn.ghost:hover{background:var(--surface-alt)}
+  .btn.small{padding:5px 10px;font-size:12.5px}
+  .btn.danger{color:var(--coral)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  label.field-label{display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:5px}
+  input.field,select.field,textarea.field{
+    width:100%;padding:8px 10px;border-radius:var(--radius-s);border:1px solid var(--border);background:var(--surface);
+  }
+  input.field.editable,textarea.field.editable{background:var(--input-bg);border-color:var(--input-border)}
+  input.field:focus,select.field:focus,textarea.field:focus{outline:2px solid var(--accent);outline-offset:1px}
+  textarea.field{resize:vertical;min-height:64px}
+
+  table.datatable{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.datatable th{
+    text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);
+    font-weight:600;padding:0 10px 8px;border-bottom:1px solid var(--border);white-space:nowrap;
+  }
+  table.datatable td{padding:10px 10px;border-bottom:1px solid var(--border-soft);vertical-align:top}
+  table.datatable tr:last-child td{border-bottom:none}
+  .table-scroll{overflow-x:auto;border-radius:var(--radius-m)}
+  .empty-row td{color:var(--text-faint);text-align:center;padding:26px 10px;font-style:italic}
+
+  .week-card{border:1px solid var(--border-soft);border-radius:var(--radius-m);overflow:hidden;background:var(--surface)}
+  .week-head{display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer;user-select:none}
+  .week-num{
+    font-family:var(--font-mono);font-weight:600;font-size:13px;color:var(--brand);
+    background:var(--surface-alt);border-radius:7px;width:34px;height:34px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .week-head-title{flex:1;min-width:0}
+  .week-head-title b{font-size:14.5px}
+  .week-progress-bar{height:5px;border-radius:3px;background:var(--surface-alt);margin-top:6px;overflow:hidden}
+  .week-progress-fill{height:100%;background:var(--accent);border-radius:3px}
+  .chev{transition:transform .15s ease;color:var(--text-faint);flex:none}
+  .week-card.open .chev{transform:rotate(90deg)}
+  .week-body{display:none;padding:0 18px 20px;border-top:1px solid var(--border-soft)}
+  .week-card.open .week-body{display:block}
+  .week-meta{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  .week-meta .block b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:4px}
+  .week-meta .block p{margin:0;font-size:13.5px}
+  .decision-flag{
+    display:flex;gap:9px;background:var(--coral-bg);border:1px solid var(--coral-border);color:var(--coral);
+    border-radius:var(--radius-s);padding:10px 12px;font-size:13px;margin:14px 0;
+  }
+  .task-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+  .task-item{display:flex;align-items:flex-start;gap:9px;font-size:13.5px}
+  .task-item input[type=checkbox]{margin-top:3px;width:15px;height:15px;accent-color:var(--brand)}
+  .task-item.done label{color:var(--text-faint);text-decoration:line-through}
+  .week-notes{margin-top:16px}
+  .notes-byline{font-size:11.5px;color:var(--text-faint);margin-top:5px}
+
+  .log-entry{border:1px solid var(--border-soft);border-radius:var(--radius-m);padding:14px 16px;background:var(--surface)}
+  .log-entry-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .author-badge{
+    display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
+    font-size:10.5px;font-weight:700;color:#fff;flex:none;
+  }
+  .note-card{border:1px solid var(--border-soft);border-radius:var(--radius-m);padding:14px 16px;background:var(--surface);display:flex;gap:11px}
+  .note-card p{margin:4px 0 0;font-size:13.5px;white-space:pre-wrap}
+  .note-meta{font-size:11.5px;color:var(--text-faint);display:flex;gap:8px;align-items:center}
+
+  .segmented{display:inline-flex;border:1px solid var(--border);border-radius:var(--radius-s);overflow:hidden}
+  .segmented button{border:none;background:var(--surface);padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text-muted)}
+  .segmented button.active{background:var(--brand);color:#fff}
+
+  .grid-table{width:100%;border-collapse:separate;border-spacing:5px;font-family:var(--font-mono);font-size:12.5px}
+  .grid-table th{font-family:var(--font-body);font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;padding:4px}
+  .grid-cell{border-radius:8px;padding:10px 8px;text-align:center;border:1px solid transparent}
+  .grid-cell.green{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+  .grid-cell.gold{background:var(--gold-bg);color:var(--gold);border-color:var(--gold-border)}
+  .grid-cell.coral{background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border)}
+  .grid-cell .cell-main{font-weight:600;font-size:13px}
+  .grid-cell .cell-sub{font-size:10.5px;opacity:.75;margin-top:2px}
+  .grid-cell .cell-warn{font-size:9.5px;margin-top:3px;font-family:var(--font-body);font-weight:600}
+  .axis-label{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+
+  .checklist-item{display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-bottom:1px solid var(--border-soft)}
+  .checklist-item:last-child{border-bottom:none}
+  .checklist-item input{margin-top:2px;width:16px;height:16px;accent-color:var(--brand)}
+  .checklist-item.done span{color:var(--text-muted)}
+
+  .stage-row{display:grid;grid-template-columns:56px 1fr 1fr 2fr 40px;gap:12px;align-items:center;padding:11px 6px;border-bottom:1px solid var(--border-soft)}
+  .stage-row:last-child{border-bottom:none}
+  .stage-row.current{background:var(--surface-alt);border-radius:var(--radius-s)}
+  .stage-num{font-family:var(--font-mono);font-weight:700;color:var(--brand);text-align:center}
+
+  ::placeholder{color:var(--text-faint)}
+  .section-title{font-size:16px;margin-bottom:2px}
+  .helptext{font-size:12.5px;color:var(--text-muted)}
+  .flex-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .wrap-gap{display:flex;flex-wrap:wrap;gap:8px}
+
+  /* ---------- Password gate ---------- */
+  #gate{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px;
+  }
+  #gate[hidden]{display:none}
+  .gate-card{
+    max-width:360px;width:100%;background:var(--surface);border:1px solid var(--border-soft);
+    border-radius:var(--radius-l);box-shadow:var(--shadow);padding:28px 26px;text-align:center;
+  }
+  .gate-card h1{font-size:22px;margin-bottom:8px}
+  .gate-card p{font-size:13.5px;color:var(--text-muted);margin:0 0 16px}
+  .gate-error{color:var(--coral);font-size:12.5px;margin-top:8px;min-height:16px}
+</style>
+</head>
+<body>
+
+<div id="gate" hidden>
+  <div class="gate-card">
+    <h1>Friday Pilot</h1>
+    <p>This tracker is shared between Judy and Emelia. Enter the password to continue.</p>
+    <input class="field editable" id="gatePassword" type="password" placeholder="Shared password" autocomplete="current-password">
+    <div style="margin-top:12px"><button class="btn primary" id="gateSubmit" style="width:100%;justify-content:center">Continue</button></div>
+    <div class="gate-error" id="gateError"></div>
+  </div>
+</div>
+
+<div class="banner" id="banner" hidden></div>
+
+<div id="app" hidden>
+  <aside class="sidebar">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+        <circle cx="15" cy="15" r="14" fill="rgba(255,255,255,.1)"/>
+        <path d="M6 13c2 -2 4 -2 6 0s4 2 6 0 4 -2 6 0" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+        <path d="M6 18c2 -2 4 -2 6 0s4 2 6 0 4 -2 6 0" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none" opacity=".6"/>
+      </svg>
+      <div>
+        <div class="brand-name">Friday Pilot</div>
+        <div class="brand-tag">Aquatic OT validation</div>
+      </div>
+    </div>
+    <nav class="navlist" id="navlist"></nav>
+    <div class="sidebar-foot">
+      <div class="stage-chip">
+        <span>Growth stage</span>
+        <b id="sidebarStage">Stage 1</b>
+      </div>
+      <div class="sync-row">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncLabel">Connecting…</span>
+      </div>
+      <div class="identity-row" id="identityRow"></div>
+    </div>
+  </aside>
+  <main class="content" id="content"></main>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================== DATA ============================== */
+
+var WEEKS = [
+  {n:1, title:"Business Definition", goal:"Define market, services, pricing hypothesis and model.",
+   done:"The concept is written down and specific enough to test.", decision:null,
+   tasks:["Target market set: ages 2–16, South OC, developmental/neurological population",
+     "Initial services chosen: aquatic OT, evaluation, parent coaching",
+     "Pricing hypothesis set: ~$160/session, ~$200–250/evaluation",
+     "Model confirmed: solo, private pay, rent pool, Friday pilot, keep Beach Kids"],
+   seedDone:[true,true,true,true], seedStatus:"complete"},
+  {n:2, title:"Qualifications & Clinical Readiness", goal:"Confirm she can legally and competently deliver this before anything else moves.",
+   done:"Both courses are scheduled/complete, CPR is confirmed current, and all three conversations happened.",
+   decision:"A serious red flag from Heidi, Erika, or Clarissa on legality, insurance, or scope pauses Week 3 until resolved.",
+   tasks:["Enroll in ATIC Aquatic Therapy course (~$450)","Enroll in PEDS Aquatic course through ATIC (~$350)",
+     "Confirm CPR is current and covers pediatric","Ask about aquatic-specific liability coverage / license scope",
+     "Talk with Heidi","Talk with Erika","Talk with Clarissa (aquatic PT, Yorba Linda)",
+     "Write a one-page \"scope of practice for pilot\" — who to accept vs. defer"],
+   seedDone:[false,false,false,false,false,false,false,false], seedStatus:"progress"},
+  {n:3, title:"Find the Pool", goal:"Build a real list of candidate pools. No booking yet.",
+   done:"10+ facilities logged with contact answers.", decision:null,
+   tasks:["List 10+ candidate facilities across San Clemente, Dana Point, SJC, Capistrano Beach, Laguna Niguel, Mission Viejo, Irvine, Lake Forest, RSM",
+     "Contact each: independent-therapist policy, rental terms, rates",
+     "Log rate, Friday availability, lifeguard rule, insurance requirement, water temp, equipment",
+     "Confirm: do NOT book anything yet"]},
+  {n:4, title:"Pool + Competition", goal:"Narrow the pool list and see who else is already doing this.",
+   done:"3 viable pools identified; competitor landscape mapped.", decision:null,
+   tasks:["Narrow to 3 viable pools (cost, availability, requirements)",
+     "Research competing pediatric/aquatic OT providers in South OC & OC",
+     "Log competitor pricing, credentials, pool type, session length, in-home options",
+     "Identify pricing gaps and openings"]},
+  {n:5, title:"Pricing + Financial Model", goal:"Turn the pricing hypothesis into a real, expense-adjusted model.",
+   done:"Breakeven sessions/week known; model checked against the $100–160k goal.", decision:null,
+   tasks:["Finalize per-session and evaluation pricing","Draft cancellation / no-show policy",
+     "Build full cost model","Determine breakeven sessions/week",
+     "Sanity-check against $100k–$160k/yr goal at realistic volume"]},
+  {n:6, title:"Demand Validation", goal:"Talk to enough people to know if this is wanted, not assumed.",
+   done:"All interviews complete and synthesized into a clear read on willingness to pay.", decision:null,
+   tasks:["Interview ~5 pediatric OTs","Interview ~3 pediatric PTs",
+     "Interview ~3 pediatricians / developmental professionals","Interview ~5 parents of potential clients",
+     "Synthesize: price sensitivity, concerns, distance tolerance, value of parent coaching"]},
+  {n:7, title:"Legal & Business Setup", goal:"Stand up the minimum legal structure — not more.",
+   done:"Entity, EIN, bank account, insurance, and paperwork all in place.", decision:null,
+   tasks:["Choose business name + check availability","LLC vs. sole proprietorship — decide with a CPA",
+     "Get an EIN","Open a business bank account","Professional liability insurance (+ general liability if pool requires)",
+     "Confirm the chosen pool's insurance requirements are met","Local business license",
+     "Draft service agreement, consent forms, cancellation policy, privacy basics"]},
+  {n:8, title:"Business Systems", goal:"Never improvise an inquiry-to-payment workflow again.",
+   done:"Inquiry → intake → evaluation → treatment → payment → documentation works end-to-end.", decision:null,
+   tasks:["Choose a scheduling tool","Build an intake packet","Choose an EHR / documentation system",
+     "Build note templates: evaluation, treatment, discharge","Set up payment collection and receipts",
+     "Set up bookkeeping + mileage/expense tracking"]},
+  {n:9, title:"Minimum Viable Marketing", goal:"Just enough presence to be findable and credible.",
+   done:"A one-page site and profile exist and explain who/what/pricing/how to contact.", decision:null,
+   tasks:["Finalize business name + simple logo","Register domain + professional email",
+     "Build a basic one-page website","Set up Instagram/Facebook if useful",
+     "Set up Google Business Profile if eligible"]},
+  {n:10, title:"Referral Network", goal:"Build relationships before asking for anything.",
+   done:"~25 contacts listed and introduced to the practice.", decision:null,
+   tasks:["List 5 pediatric OTs, 5 pediatric PTs, 3 SLPs","List 3 pediatricians, 2 developmental specialists",
+     "List 2 swim schools, 2 parent/community orgs, 3 other providers",
+     "Reach out to introduce the practice — awareness, not a hard ask"]},
+  {n:11, title:"Find First Families", goal:"Get real commitment before touching a pool calendar.",
+   done:"2–3 families are genuinely interested and their Fridays are known.", decision:null,
+   tasks:["Identify 2–3 interested/committed families","Confirm each family's preferred Fridays",
+     "Confirm real interest in private pay at hypothesis pricing"]},
+  {n:12, title:"Book First Friday", goal:"Match families to a pool and book exactly one date.",
+   done:"One Friday is booked; intake paperwork is out to families.",
+   decision:"Do not book recurring time — one Friday only, matched to real demand.",
+   tasks:["Cross-reference family availability against the 3 viable pools","Confirm pool booking policy and lead time",
+     "Book ONE Friday only","Send intake paperwork in advance"]},
+  {n:13, title:"First Friday Pilot", goal:"Run the real thing and track everything.",
+   done:"2–3 clients treated; revenue, expenses, and time all logged.", decision:null,
+   tasks:["Complete intake / consent / payment setup per family","Treat 2–3 clients",
+     "Log revenue, expenses, and time by category","Collect parent feedback"]},
+  {n:14, title:"Review + Improve", goal:"Turn one data point into a decision.",
+   done:"Per-client and per-hour economics are calculated and understood.", decision:null,
+   tasks:["Calculate revenue/client, revenue/clinical hour, revenue/total work hour",
+     "Calculate gross and net profit for the Friday","Review feedback and repeat/referral likelihood",
+     "Identify what changes before the next Friday"]},
+  {n:15, title:"Second Friday / Repeat", goal:"Prove the first Friday wasn't a fluke.",
+   done:"A second Friday runs with the Week 14 changes applied.", decision:null,
+   tasks:["Rebook returning families + add new interested families","Apply the changes identified in Week 14",
+     "Track the same metrics again for comparison"]},
+  {n:16, title:"Business Viability Decision", goal:"Decide, on evidence, what happens next.",
+   done:"A clear go / grow / rework decision, checked against the exit threshold.", decision:null,
+   tasks:["Compare trend across pilot Fridays: revenue, profit, referrals",
+     "Check progress against the Exit Threshold checklist",
+     "Decide: keep validating, move to Stage 2, or rework the model"]}
+];
+
+var STAGES = [
+  {n:1, bk:"4 days", biz:"1 Friday", criteria:"Baseline — validate legality, pool, and first real demand"},
+  {n:2, bk:"3 days", biz:"2 days", criteria:"Fridays are consistently profitable and referrals are starting"},
+  {n:3, bk:"2 days", biz:"3 days", criteria:"Reliable referral pipeline and steady pool access"},
+  {n:4, bk:"1 day", biz:"4 days", criteria:"Business income approaching the exit threshold"},
+  {n:5, bk:"0 days", biz:"3–4 days", criteria:"Full transition — only after the exit threshold is met"}
+];
+
+var EXIT_ITEMS = [
+  "6+ months of consistent operation","Predictable monthly revenue","Consistent client demand",
+  "Strong referral pipeline","Reliable pool access","Multiple clients — not dependent on one family",
+  "Accounting and taxes under control","Adequate cash reserves","Sustainable workload",
+  "Business income approaching/exceeding the Beach Kids threshold"
+];
+var GUT_CHECK_Q = "Would I choose this business over my current job even if the income were approximately equal?";
+
+var STARTUP_COSTS = [
+  {item:"LLC formation (CA)", amt:70},
+  {item:"Business license / local permit", amt:100},
+  {item:"Aquatic therapy CE courses / certification", amt:600},
+  {item:"Equipment (mats, toys, weights, PPE, storage)", amt:350},
+  {item:"S-corp election (Form 2553 + accountant setup, optional)", amt:300}
+];
+
+var FIN_DEFAULTS = {
+  sessionsPerFriday:3, sessionPrice:160, fridaysPerMonth:4, evalsPerMonth:1, evalPrice:250,
+  poolRate:45, poolHours:4, processingPct:3.0, insurance:45, software:35, supplies:25,
+  miles:24, mileageRate:0.67, adminHours:2, driveHours:0.5, taxPct:28, beachKidsComp:92000
+};
+var FIN_FIELDS = [
+  ["sessionsPerFriday","Treatment sessions / Friday"],
+  ["sessionPrice","Price / session ($)"],
+  ["fridaysPerMonth","Fridays / month"],
+  ["evalsPerMonth","Evaluations / month"],
+  ["evalPrice","Price / evaluation ($)"],
+  ["poolRate","Pool rental rate ($/hr)"],
+  ["poolHours","Pool hours booked / Friday"],
+  ["processingPct","Payment processing (%)"],
+  ["insurance","Liability insurance ($/mo)"],
+  ["software","EHR / scheduling software ($/mo)"],
+  ["supplies","Supplies ($/mo)"],
+  ["miles","Round-trip miles / Friday"],
+  ["mileageRate","Mileage rate ($/mi)"],
+  ["adminHours","Unpaid admin hrs / Friday"],
+  ["driveHours","Drive time hrs / Friday"],
+  ["taxPct","Tax set-aside (%)"],
+  ["beachKidsComp","Beach Kids total comp / yr ($)"]
+];
+
+var SECTIONS = ["weeks","pool","demand","referrals","notes","financial","growth","exitThreshold","brainstorm"];
+
+/* ============================== HELPERS ============================== */
+
+function esc(s){
+  return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function money(n,cents){
+  n = Number(n)||0;
+  var neg = n<0; n=Math.abs(n);
+  var s = n.toLocaleString("en-US",{minimumFractionDigits:cents?2:0,maximumFractionDigits:cents?2:0});
+  return (neg?"-$":"$")+s;
+}
+function num(n,d){ n=Number(n)||0; return n.toLocaleString("en-US",{maximumFractionDigits:d||0}); }
+function debounce(fn,ms){ var t; return function(){ var a=arguments,ctx=this; clearTimeout(t); t=setTimeout(function(){fn.apply(ctx,a);},ms); }; }
+function timeAgo(iso){
+  if(!iso) return "";
+  var d = new Date(iso), diff = (Date.now()-d.getTime())/1000;
+  if(diff<60) return "just now";
+  if(diff<3600) return Math.floor(diff/60)+"m ago";
+  if(diff<86400) return Math.floor(diff/3600)+"h ago";
+  if(diff<86400*30) return Math.floor(diff/86400)+"d ago";
+  return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+}
+var AVATAR_COLORS = ["#0E5C57","#9C7521","#B14A34","#276B45","#3A5C9C","#7A4C9C"];
+function avatarColor(name){
+  name = name||"?";
+  var h=0; for(var i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i))>>>0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function initials(name){
+  name = (name||"?").trim();
+  if(!name) return "?";
+  var parts = name.split(/\s+/);
+  return (parts[0][0]+(parts[1]?parts[1][0]:"")).toUpperCase();
+}
+function genId(){ return "id"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+
+/* ============================== SYNC LAYER ============================== */
+/* Primary: /api/state (Vercel function backed by Upstash/Vercel KV Redis).
+   Falls back to this browser's localStorage when the server reports the
+   storage integration hasn't been added yet, so the app is still usable
+   right after a first deploy. */
+
+var API_BASE = "/api/state";
+var appPassword = "";
+try{ appPassword = localStorage.getItem("fp_password") || ""; }catch(e){}
+var serverConfigured = true;   // flips false on a 503 from the API
+var lastSyncOk = null;
+
+function authHeaders(){
+  var h = {"Content-Type":"application/json"};
+  if(appPassword) h["x-app-password"] = appPassword;
+  return h;
+}
+function localGet(name){
+  try{ var raw = localStorage.getItem("fp_local_"+name); return raw?JSON.parse(raw):null; }catch(e){ return null; }
+}
+function localSet(name,value){
+  try{ localStorage.setItem("fp_local_"+name, JSON.stringify(value)); }catch(e){}
+}
+
+function apiGetAll(){
+  return fetch(API_BASE, {headers:authHeaders(), cache:"no-store"}).then(function(res){
+    if(res.status===401){ var e=new Error("bad_password"); e.authRequired=true; throw e; }
+    if(res.status===503){ var e2=new Error("not_configured"); e2.notConfigured=true; throw e2; }
+    if(!res.ok) throw new Error("http_"+res.status);
+    return res.json();
+  }).then(function(data){ return data.state; });
+}
+function apiGetSection(name){
+  return fetch(API_BASE+"?section="+encodeURIComponent(name), {headers:authHeaders(), cache:"no-store"}).then(function(res){
+    if(res.status===401){ var e=new Error("bad_password"); e.authRequired=true; throw e; }
+    if(res.status===503){ var e2=new Error("not_configured"); e2.notConfigured=true; throw e2; }
+    if(!res.ok) throw new Error("http_"+res.status);
+    return res.json();
+  }).then(function(data){ return data.value; });
+}
+function apiSetSection(name,value){
+  return fetch(API_BASE, {method:"POST", headers:authHeaders(), body:JSON.stringify({section:name,value:value})}).then(function(res){
+    if(res.status===401){ var e=new Error("bad_password"); e.authRequired=true; throw e; }
+    if(res.status===503){ var e2=new Error("not_configured"); e2.notConfigured=true; throw e2; }
+    if(!res.ok) throw new Error("http_"+res.status);
+    return true;
+  });
+}
+
+/* ============================== STATE ============================== */
+
+var route = "overview";
+var identity = "";
+try{ identity = localStorage.getItem("fp_identity") || ""; }catch(e){}
+
+var state = {
+  weeks:{}, pool:[], demand:[], referrals:[], notes:[],
+  financial:null, growth:null, exitThreshold:null, brainstorm:null,
+  openWeek: null
+};
+
+function applySection(name, raw){
+  if(name==="weeks"){
+    state.weeks = raw || {};
+  } else if(name==="pool" || name==="demand" || name==="referrals" || name==="notes"){
+    var map = raw || {};
+    var arr = Object.keys(map).map(function(id){ return Object.assign({id:id}, map[id]); });
+    arr.sort(function(a,b){ return (b.createdAt||"").localeCompare(a.createdAt||""); });
+    state[name] = arr;
+  } else if(name==="financial"){
+    state.financial = Object.assign({}, FIN_DEFAULTS, raw||{});
+  } else if(name==="growth"){
+    state.growth = Object.assign({stage:1,notes:""}, raw||{});
+  } else if(name==="exitThreshold"){
+    state.exitThreshold = Object.assign({checks:EXIT_ITEMS.map(function(){return false;}), gut:null, gutNotes:""}, raw||{});
+  } else if(name==="brainstorm"){
+    state.brainstorm = Object.assign({text:""}, raw||{});
+  }
+}
+function toMap(arr){
+  var m = {};
+  (arr||[]).forEach(function(e){ var copy=Object.assign({},e); var id=copy.id; delete copy.id; m[id]=copy; });
+  return m;
+}
+function rawOf(name){
+  if(name==="weeks") return state.weeks;
+  if(name==="pool"||name==="demand"||name==="referrals"||name==="notes") return toMap(state[name]);
+  return state[name];
+}
+
+var mutateQueue = {};
+function mutateSection(name, mutatorFn){
+  var task = (mutateQueue[name]||Promise.resolve()).then(function(){
+    var freshP = serverConfigured ? apiGetSection(name).catch(function(){ return rawOf(name); })
+                                   : Promise.resolve(localGet(name));
+    return freshP.then(function(fresh){
+      var next = mutatorFn(fresh==null ? rawOf(name) : fresh);
+      applySection(name, next);
+      renderView();
+      if(serverConfigured){
+        return apiSetSection(name, next).catch(function(err){
+          if(err && err.notConfigured){ serverConfigured=false; localSet(name,next); setSyncState("local"); }
+          else { setSyncState("err"); }
+        });
+      }
+      localSet(name, next);
+      return null;
+    });
+  });
+  mutateQueue[name] = task.catch(function(){});
+  return task;
+}
+
+function setSyncState(kind){
+  lastSyncOk = kind;
+  var dot = document.getElementById("syncDot"), label = document.getElementById("syncLabel");
+  if(!dot) return;
+  dot.className = "sync-dot " + (kind==="ok"?"live":kind==="local"?"local":"err");
+  label.textContent = kind==="ok" ? "Live — shared with Judy & Emelia"
+    : kind==="local" ? "Storage not connected yet — saved on this device only"
+    : "Can't reach the server — showing last saved copy";
+  var banner = document.getElementById("banner");
+  if(kind==="local"){
+    banner.hidden = false;
+    banner.textContent = "Shared storage isn't connected yet — add a KV/Redis integration in the Vercel dashboard, then redeploy, to sync Judy and Emelia's changes.";
+  } else if(kind==="err"){
+    banner.hidden = false;
+    banner.textContent = "Having trouble reaching the server — your last saved data is showing; changes will retry automatically.";
+  } else {
+    banner.hidden = true;
+  }
+}
+
+async function pollAll(){
+  try{
+    var s = await apiGetAll();
+    serverConfigured = true;
+    SECTIONS.forEach(function(name){ applySection(name, s[name]); });
+    setSyncState("ok");
+    renderSidebarAndNav();
+    renderView();
+  }catch(err){
+    if(err && err.authRequired){ showGate(true); return; }
+    if(err && err.notConfigured){
+      serverConfigured = false;
+      SECTIONS.forEach(function(name){ applySection(name, localGet(name)); });
+      setSyncState("local");
+      renderSidebarAndNav();
+      renderView();
+      return;
+    }
+    setSyncState("err");
+  }
+}
+
+/* ============================== GATE ============================== */
+
+function showGate(show){
+  document.getElementById("gate").hidden = !show;
+  document.getElementById("app").hidden = show;
+}
+document.getElementById("gateSubmit").addEventListener("click", submitGate);
+document.getElementById("gatePassword").addEventListener("keydown", function(e){ if(e.key==="Enter") submitGate(); });
+function submitGate(){
+  var v = document.getElementById("gatePassword").value;
+  appPassword = v;
+  try{ localStorage.setItem("fp_password", v); }catch(e){}
+  document.getElementById("gateError").textContent = "";
+  pollAll().then(function(){
+    if(!document.getElementById("gate").hidden && lastSyncOk!=="ok" && lastSyncOk!=="local"){
+      // still gated (pollAll only un-gates on success/notConfigured, so re-check explicitly)
+    }
+  });
+  apiGetAll().then(function(){ showGate(false); startApp(); }).catch(function(err){
+    if(err && err.authRequired){
+      document.getElementById("gateError").textContent = "That password didn't work — try again.";
+    } else if(err && err.notConfigured){
+      showGate(false); startApp();
+    } else {
+      document.getElementById("gateError").textContent = "Couldn't reach the server — try again in a moment.";
+    }
+  });
+}
+
+/* ============================== SIDEBAR ============================== */
+
+var NAV = [
+  ["overview","OV","Overview"],["roadmap","RM","16-Week Roadmap"],["pool","PL","Pool Log"],
+  ["demand","DL","Demand Validation"],["referrals","RN","Referral Network"],["financial","FF","Financial Forecast"],
+  ["grid","GG","Growth Scenario Grid"],["stages","GS","Growth Stages"],["exit","ET","Exit Threshold"],["notes","NT","Notes"]
+];
+
+function renderNav(){
+  document.getElementById("navlist").innerHTML = NAV.map(function(item){
+    var active = item[0]===route ? " active":"";
+    return '<div class="navitem'+active+'" data-route="'+item[0]+'">'+
+      '<span class="mono-badge">'+item[1]+'</span><span class="label">'+esc(item[2])+'</span></div>';
+  }).join("");
+}
+function renderSidebar(){
+  var stage = state.growth ? state.growth.stage : 1;
+  document.getElementById("sidebarStage").textContent = "Stage "+stage;
+  var idRow = document.getElementById("identityRow");
+  if(identity){
+    idRow.innerHTML = '<span class="author-badge" style="background:'+avatarColor(identity)+'">'+esc(initials(identity))+'</span>'+
+      '<span class="identity-name" id="identityLabel">'+esc(identity)+'</span>';
+  } else {
+    idRow.innerHTML = '<input class="identity-input" id="identityInput" placeholder="Your name…" maxlength="24">';
+  }
+}
+function renderSidebarAndNav(){ renderNav(); renderSidebar(); }
+
+/* ============================== FINANCIAL MODEL ============================== */
+
+function computeForecast(f){
+  f = f || FIN_DEFAULTS;
+  var treatRev = f.sessionsPerFriday * f.sessionPrice;
+  var evalRev = (f.evalsPerMonth * f.evalPrice) / (f.fridaysPerMonth||1);
+  var grossRev = treatRev + evalRev;
+  var poolCost = f.poolRate * f.poolHours;
+  var processingFee = grossRev * (f.processingPct/100);
+  var mileageCost = f.miles * f.mileageRate;
+  var fixedOverhead = (f.insurance + f.software + f.supplies) / (f.fridaysPerMonth||1);
+  var totalExp = poolCost + processingFee + mileageCost + fixedOverhead;
+  var netProfit = grossRev - totalExp;
+  var clinicalHours = f.sessionsPerFriday * 1;
+  var totalWorkHours = clinicalHours + f.adminHours + f.driveHours;
+  var revPerClinHour = clinicalHours>0 ? grossRev/clinicalHours : 0;
+  var revPerWorkHour = totalWorkHours>0 ? grossRev/totalWorkHours : 0;
+  var monthlyRevenue = grossRev * f.fridaysPerMonth;
+  var monthlyExpenses = totalExp * f.fridaysPerMonth;
+  var monthlyProfit = netProfit * f.fridaysPerMonth;
+  var annualProfit = monthlyProfit * 12;
+  var annualTakeHome = annualProfit * (1 - f.taxPct/100);
+  var breakeven = Math.ceil((poolCost+fixedOverhead+mileageCost) / (f.sessionPrice*(1-f.processingPct/100)));
+  var startupTotal = STARTUP_COSTS.reduce(function(s,c){return s+c.amt;},0);
+  var monthsToRecoup = monthlyProfit>0 ? Math.ceil(startupTotal/monthlyProfit) : null;
+  return {treatRev:treatRev, evalRev:evalRev, grossRev:grossRev, poolCost:poolCost, processingFee:processingFee,
+    mileageCost:mileageCost, fixedOverhead:fixedOverhead, totalExp:totalExp, netProfit:netProfit,
+    clinicalHours:clinicalHours, totalWorkHours:totalWorkHours, revPerClinHour:revPerClinHour,
+    revPerWorkHour:revPerWorkHour, monthlyRevenue:monthlyRevenue, monthlyExpenses:monthlyExpenses,
+    monthlyProfit:monthlyProfit, annualProfit:annualProfit, annualTakeHome:annualTakeHome,
+    breakeven:breakeven, startupTotal:startupTotal, monthsToRecoup:monthsToRecoup};
+}
+
+/* ============================== WEEK HELPERS ============================== */
+
+function weekDefaults(w){
+  return {
+    tasksDone: w.seedDone ? w.seedDone.slice() : w.tasks.map(function(){return false;}),
+    statusOverride: w.seedStatus || null, notes:"", notesBy:"", notesAt:""
+  };
+}
+function weekAutoStatus(tasksDone){
+  var doneCt = tasksDone.filter(Boolean).length;
+  if(doneCt===0) return "notstarted";
+  if(doneCt===tasksDone.length) return "complete";
+  return "progress";
+}
+function weekEffective(n){
+  var w = WEEKS[n-1];
+  var d = state.weeks[n];
+  if(!d) return Object.assign({}, weekDefaults(w));
+  return d;
+}
+function weekProgressPct(n){
+  var e = weekEffective(n);
+  var total = WEEKS[n-1].tasks.length;
+  var done = e.tasksDone.filter(Boolean).length;
+  return total ? Math.round(done/total*100) : 0;
+}
+function weekStatus(n){
+  var e = weekEffective(n);
+  return e.statusOverride || weekAutoStatus(e.tasksDone);
+}
+function statusPill(status){
+  if(status==="complete") return '<span class="pill complete">Complete</span>';
+  if(status==="progress") return '<span class="pill progress">In progress</span>';
+  return '<span class="pill notstarted">Not started</span>';
+}
+function currentWeek(){
+  for(var i=0;i<WEEKS.length;i++){ if(weekStatus(WEEKS[i].n)!=="complete") return WEEKS[i].n; }
+  return 16;
+}
+function statLine(label,value){
+  return '<div class="flex-between"><span class="helptext">'+esc(label)+'</span><span class="mono tnum" style="font-weight:600">'+value+'</span></div>';
+}
+
+/* ============================== VIEW: OVERVIEW ============================== */
+
+function viewOverview(){
+  var f = state.financial || FIN_DEFAULTS;
+  var fc = computeForecast(f);
+  var stage = STAGES[(state.growth?state.growth.stage:1)-1];
+  var cw = currentWeek();
+  var cwData = WEEKS[cw-1];
+  var cwEff = weekEffective(cw);
+  var incompleteTasks = cwData.tasks.filter(function(t,i){ return !cwEff.tasksDone[i]; });
+  var completeCount = WEEKS.filter(function(w){ return weekStatus(w.n)==="complete"; }).length;
+  var recentNotes = state.notes.slice(0,4);
+  var vsBeach = fc.annualTakeHome - f.beachKidsComp;
+
+  return '' +
+  '<div class="view-head">'+
+    '<div class="view-eyebrow">Overview</div>'+
+    '<h1 class="view-title">Where things stand</h1>'+
+    '<p class="view-sub">A shared snapshot for Emelia and Judy — everything below updates as either of you edits it.</p>'+
+  '</div>'+
+  '<div class="grid-3" style="margin-bottom:20px">'+
+    '<div class="stat-tile">'+
+      '<div class="stat-label">Growth stage</div>'+
+      '<div class="stat-value">'+stage.n+' <span class="mono" style="font-size:14px;color:var(--text-muted)">/ 5</span></div>'+
+      '<div class="stat-note">'+esc(stage.criteria)+'</div>'+
+    '</div>'+
+    '<div class="stat-tile">'+
+      '<div class="stat-label">Roadmap progress</div>'+
+      '<div class="stat-value">'+completeCount+' <span class="mono" style="font-size:14px;color:var(--text-muted)">/ 16 weeks</span></div>'+
+      '<div class="stat-note">Currently on Week '+cw+' — '+esc(cwData.title)+'</div>'+
+    '</div>'+
+    '<div class="stat-tile">'+
+      '<div class="stat-label">Annual take-home vs. Beach Kids</div>'+
+      '<div class="stat-value tnum '+(vsBeach>=0?"pos":"neg")+'">'+(vsBeach>=0?"+":"")+money(vsBeach)+'</div>'+
+      '<div class="stat-note">At current forecast inputs</div>'+
+    '</div>'+
+  '</div>'+
+  '<div class="row" style="align-items:stretch">'+
+    '<div class="card" style="flex:1.3">'+
+      '<h3 class="section-title">Next up — Week '+cw+'</h3>'+
+      '<p class="helptext" style="margin:4px 0 14px">'+esc(cwData.goal)+'</p>'+
+      (incompleteTasks.length ? '<ul class="task-list">'+incompleteTasks.slice(0,5).map(function(t){
+        return '<li class="task-item"><span style="width:15px;height:15px;border-radius:3px;border:1.5px solid var(--border);flex:none;margin-top:2px"></span><label>'+esc(t)+'</label></li>';
+      }).join("")+'</ul>' : '<p class="helptext">All tasks for this week are checked off — mark it complete on the Roadmap tab.</p>')+
+      '<div style="margin-top:14px"><a href="#roadmap" class="btn small">Open full roadmap →</a></div>'+
+    '</div>'+
+    '<div class="card" style="flex:1">'+
+      '<h3 class="section-title">Friday economics, right now</h3>'+
+      '<div class="stack" style="gap:10px;margin-top:10px">'+
+        statLine("Net profit / Friday", money(fc.netProfit,true))+
+        statLine("Monthly profit", money(fc.monthlyProfit,true))+
+        statLine("Breakeven sessions / Friday", num(fc.breakeven))+
+      '</div>'+
+      '<div style="margin-top:14px"><a href="#financial" class="btn small">Open financial forecast →</a></div>'+
+    '</div>'+
+  '</div>'+
+  '<div class="card" style="margin-top:20px">'+
+    '<div class="flex-between">'+
+      '<h3 class="section-title">Notes back and forth</h3>'+
+      '<a href="#notes" class="btn small ghost">See all →</a>'+
+    '</div>'+
+    noteComposer()+
+    '<div class="stack" style="gap:10px;margin-top:14px">'+
+      (recentNotes.length ? recentNotes.map(noteCardHtml).join("") : '<p class="helptext">No notes yet — the first one either of you leaves shows up here for both.</p>')+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================== VIEW: ROADMAP ============================== */
+
+function viewRoadmap(){
+  var cards = WEEKS.map(function(w){
+    var eff = weekEffective(w.n);
+    var status = weekStatus(w.n);
+    var pctDone = weekProgressPct(w.n);
+    var open = state.openWeek===w.n;
+    return '' +
+    '<div class="week-card'+(open?" open":"")+'" data-week="'+w.n+'">'+
+      '<div class="week-head" data-action="toggleWeek" data-week="'+w.n+'">'+
+        '<div class="week-num">W'+w.n+'</div>'+
+        '<div class="week-head-title">'+
+          '<b>'+esc(w.title)+'</b>'+
+          '<div class="week-progress-bar"><div class="week-progress-fill" style="width:'+pctDone+'%"></div></div>'+
+        '</div>'+
+        statusPill(status)+
+        '<svg class="chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      '</div>'+
+      '<div class="week-body">'+
+        '<div class="week-meta">'+
+          '<div class="block"><b>Goal</b><p>'+esc(w.goal)+'</p></div>'+
+          '<div class="block"><b>Done looks like</b><p>'+esc(w.done)+'</p></div>'+
+        '</div>'+
+        (w.decision ? '<div class="decision-flag"><span>⚑</span><span><b>Decision point —</b> '+esc(w.decision)+'</span></div>' : '')+
+        '<ul class="task-list">'+w.tasks.map(function(t,i){
+          var checked = eff.tasksDone[i];
+          return '<li class="task-item'+(checked?" done":"")+'">'+
+            '<input type="checkbox" data-action="toggleTask" data-week="'+w.n+'" data-idx="'+i+'" '+(checked?"checked":"")+'>'+
+            '<label>'+esc(t)+'</label></li>';
+        }).join("")+'</ul>'+
+        '<div style="margin-top:14px">'+
+          '<label class="field-label">Manual status override</label>'+
+          '<select class="field" style="max-width:200px" data-action="statusOverride" data-week="'+w.n+'">'+
+            '<option value="">Auto (from checklist)</option>'+
+            '<option value="notstarted"'+(eff.statusOverride==="notstarted"?" selected":"")+'>Not started</option>'+
+            '<option value="progress"'+(eff.statusOverride==="progress"?" selected":"")+'>In progress</option>'+
+            '<option value="complete"'+(eff.statusOverride==="complete"?" selected":"")+'>Complete</option>'+
+          '</select>'+
+        '</div>'+
+        '<div class="week-notes">'+
+          '<label class="field-label">Notes for this week</label>'+
+          '<textarea class="field editable" data-action="weekNotes" data-week="'+w.n+'" placeholder="After talking with Heidi, learned…">'+esc(eff.notes)+'</textarea>'+
+          (eff.notesBy ? '<div class="notes-byline">Last edited by '+esc(eff.notesBy)+(eff.notesAt?" · "+timeAgo(eff.notesAt):"")+'</div>' : '')+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join("");
+
+  return '' +
+  '<div class="view-head">'+
+    '<div class="view-eyebrow">16-Week Roadmap</div>'+
+    '<h1 class="view-title">Week by week</h1>'+
+    '<p class="view-sub">Check off tasks, override status manually if reality runs ahead of the checklist, and leave notes for each other on any week.</p>'+
+  '</div>'+
+  '<div class="stack" style="gap:12px">'+cards+'</div>'+
+  '<div class="card" style="margin-top:20px">'+
+    '<h3 class="section-title">Catch-all brainstorming space</h3>'+
+    '<p class="helptext" style="margin:4px 0 12px">Not tied to a specific week — feature ideas, business-potential thoughts, anything worth remembering.</p>'+
+    '<textarea class="field editable" data-action="brainstorm" style="min-height:110px" placeholder="Random ideas, things to look into later…">'+esc(state.brainstorm?state.brainstorm.text:"")+'</textarea>'+
+  '</div>';
+}
+
+/* ============================== VIEW: LOGS ============================== */
+
+function logFormHtml(kind){
+  if(kind==="pool"){
+    return '<div class="grid-3">'+
+      textField("f_facility","Facility name")+ textField("f_city","City")+ numField("f_rate","Rate ($/hr)")+
+      textField("f_friday","Friday availability")+ textField("f_watertemp","Water temp")+ selectField("f_therapistok","Independent-therapist OK",["Yes","No","Asking"])+
+      selectField("f_lifeguard","Lifeguard required",["Yes","No","Asking"])+ dateField("f_datecontacted","Date contacted")+ textField("f_notes","Notes")+
+    '</div>'+addBtn("pool","Add facility");
+  }
+  if(kind==="demand"){
+    return '<div class="grid-3">'+
+      textField("f_contact","Contact name")+ selectField("f_role","Role",["Pediatric OT","Pediatric PT","Pediatrician","Developmental Specialist","Parent","Other"])+ dateField("f_date","Date")+
+      selectField("f_wouldpay","Would consider private pay?",["Yes","No","Maybe"])+ selectField("f_referral","Referral potential",["Yes","No","Maybe"])+ textField("f_notes","Key takeaways")+
+    '</div>'+addBtn("demand","Add conversation");
+  }
+  return '<div class="grid-3">'+
+    textField("f_name","Name")+ selectField("f_type","Type",["Pediatric OT","Pediatric PT","SLP","Pediatrician","Developmental Specialist","Swim School","Parent-Community Org","Other"])+ textField("f_contactinfo","Contact info")+
+    selectField("f_outreach","Outreach status",["Not contacted","Introduced","Ongoing relationship"])+ textField("f_notes","Notes")+
+  '</div>'+addBtn("referrals","Add contact");
+}
+function textField(id,label){ return '<div><label class="field-label">'+esc(label)+'</label><input class="field editable" id="'+id+'"></div>'; }
+function numField(id,label){ return '<div><label class="field-label">'+esc(label)+'</label><input class="field editable" type="number" id="'+id+'"></div>'; }
+function dateField(id,label){ return '<div><label class="field-label">'+esc(label)+'</label><input class="field editable" type="date" id="'+id+'"></div>'; }
+function selectField(id,label,opts){
+  return '<div><label class="field-label">'+esc(label)+'</label><select class="field editable" id="'+id+'">'+
+    '<option value=""></option>'+opts.map(function(o){return '<option value="'+esc(o)+'">'+esc(o)+'</option>';}).join("")+'</select></div>';
+}
+function addBtn(kind,label){
+  return '<div style="margin-top:14px"><button class="btn primary" data-action="addEntry" data-kind="'+kind+'">'+esc(label)+'</button></div>';
+}
+function pillTag(text){ return '<span class="pill notstarted">'+text+'</span>'; }
+function entryFooter(e){
+  if(!e.createdBy) return "";
+  return '<div class="notes-byline" style="margin-top:8px">Added by '+esc(e.createdBy)+(e.createdAt?" · "+timeAgo(e.createdAt):"")+'</div>';
+}
+function poolEntryHtml(e){
+  return '<div class="log-entry">'+
+    '<div class="log-entry-head"><b>'+esc(e.facility||"Untitled facility")+'</b>'+
+      '<button class="btn small danger ghost" data-action="deleteEntry" data-kind="pool" data-id="'+e.id+'">Remove</button></div>'+
+    '<div class="helptext" style="margin-top:4px">'+esc(e.city||"—")+' · '+money(e.rate||0)+'/hr · Fridays: '+esc(e.friday||"—")+'</div>'+
+    '<div class="wrap-gap" style="margin-top:8px">'+
+      pillTag("Therapist OK: "+esc(e.therapistok||"—"))+ pillTag("Lifeguard: "+esc(e.lifeguard||"—"))+ pillTag("Water: "+esc(e.watertemp||"—"))+
+    '</div>'+
+    (e.notes?'<p style="margin:8px 0 0;font-size:13px">'+esc(e.notes)+'</p>':'')+ entryFooter(e)+
+  '</div>';
+}
+function demandEntryHtml(e){
+  return '<div class="log-entry">'+
+    '<div class="log-entry-head"><b>'+esc(e.contact||"Untitled contact")+'</b>'+
+      '<button class="btn small danger ghost" data-action="deleteEntry" data-kind="demand" data-id="'+e.id+'">Remove</button></div>'+
+    '<div class="helptext" style="margin-top:4px">'+esc(e.role||"—")+(e.date?" · "+esc(e.date):"")+'</div>'+
+    '<div class="wrap-gap" style="margin-top:8px">'+pillTag("Would pay: "+esc(e.wouldpay||"—"))+ pillTag("Referral: "+esc(e.referral||"—"))+'</div>'+
+    (e.notes?'<p style="margin:8px 0 0;font-size:13px">'+esc(e.notes)+'</p>':'')+ entryFooter(e)+
+  '</div>';
+}
+function referralEntryHtml(e){
+  return '<div class="log-entry">'+
+    '<div class="log-entry-head"><b>'+esc(e.name||"Untitled contact")+'</b>'+
+      '<button class="btn small danger ghost" data-action="deleteEntry" data-kind="referrals" data-id="'+e.id+'">Remove</button></div>'+
+    '<div class="helptext" style="margin-top:4px">'+esc(e.type||"—")+(e.contactinfo?" · "+esc(e.contactinfo):"")+'</div>'+
+    '<div class="wrap-gap" style="margin-top:8px">'+pillTag(esc(e.outreach||"Not contacted"))+'</div>'+
+    (e.notes?'<p style="margin:8px 0 0;font-size:13px">'+esc(e.notes)+'</p>':'')+ entryFooter(e)+
+  '</div>';
+}
+function viewLog(kind,title,eyebrow,sub,emptyMsg,renderFn,list){
+  return '' +
+  '<div class="view-head">'+
+    '<div class="view-eyebrow">'+esc(eyebrow)+'</div>'+
+    '<h1 class="view-title">'+esc(title)+'</h1>'+
+    '<p class="view-sub">'+esc(sub)+'</p>'+
+  '</div>'+
+  '<div class="card" style="margin-bottom:20px">'+logFormHtml(kind)+'</div>'+
+  '<div class="stack" style="gap:12px">'+
+    (list.length ? list.map(renderFn).join("") : '<div class="card empty-row" style="border:1px dashed var(--border)"><p style="margin:0;color:var(--text-faint);font-style:italic">'+esc(emptyMsg)+'</p></div>')+
+  '</div>';
+}
+function viewPool(){ return viewLog("pool","Pool Log","Pool Log","Every facility contacted — rate, availability, and requirements, logged as you go. Nothing gets booked from here.","No facilities logged yet — add the first one above.",poolEntryHtml,state.pool); }
+function viewDemand(){ return viewLog("demand","Demand Validation","Demand Validation","One row per conversation — pediatric OTs/PTs, pediatricians, and parents.","No conversations logged yet.",demandEntryHtml,state.demand); }
+function viewReferrals(){ return viewLog("referrals","Referral Network","Referral Network","Everyone worth introducing the practice to, and where that relationship stands.","No contacts logged yet.",referralEntryHtml,state.referrals); }
+
+/* ============================== VIEW: FINANCIAL ============================== */
+
+function viewFinancial(){
+  var f = state.financial || FIN_DEFAULTS;
+  var fc = computeForecast(f);
+  var inputsHtml = FIN_FIELDS.map(function(row){
+    var key=row[0], label=row[1];
+    var val = f[key];
+    return '<div><label class="field-label">'+esc(label)+'</label>'+
+      '<input class="field editable mono" type="number" step="any" data-action="finInput" data-key="'+key+'" value="'+val+'">'+
+      '</div>';
+  }).join("");
+
+  return '' +
+  '<div class="view-head">'+
+    '<div class="view-eyebrow">Financial Forecast</div>'+
+    '<h1 class="view-title">The per-Friday math</h1>'+
+    '<p class="view-sub">Every input below is shared and editable — change a number and the forecast recalculates for both of you.</p>'+
+  '</div>'+
+  '<div class="row" style="align-items:flex-start;gap:22px">'+
+    '<div class="card" style="flex:1.1">'+
+      '<h3 class="section-title">Inputs</h3>'+
+      '<div class="grid-2" style="margin-top:12px">'+inputsHtml+'</div>'+
+    '</div>'+
+    '<div class="stack" style="flex:1;gap:16px">'+
+      '<div class="card">'+
+        '<h3 class="section-title">Per Friday</h3>'+
+        '<div class="stack" style="gap:9px;margin-top:10px">'+
+          statLine("Treatment revenue", money(fc.treatRev,true))+
+          statLine("Evaluation revenue", money(fc.evalRev,true))+
+          statLine("Gross revenue", money(fc.grossRev,true))+
+          '<div style="border-top:1px solid var(--border-soft);margin:4px 0"></div>'+
+          statLine("Pool cost", money(fc.poolCost,true))+
+          statLine("Processing fee", money(fc.processingFee,true))+
+          statLine("Mileage cost", money(fc.mileageCost,true))+
+          statLine("Fixed overhead", money(fc.fixedOverhead,true))+
+          statLine("Total expenses", money(fc.totalExp,true))+
+          '<div style="border-top:1px solid var(--border-soft);margin:4px 0"></div>'+
+          statLine("Net profit / Friday", money(fc.netProfit,true))+
+        '</div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3 class="section-title">Time & rate</h3>'+
+        '<div class="stack" style="gap:9px;margin-top:10px">'+
+          statLine("Clinical hours / Friday", num(fc.clinicalHours))+
+          statLine("Total work hours / Friday", num(fc.totalWorkHours,1))+
+          statLine("Revenue / clinical hour", money(fc.revPerClinHour,true))+
+          statLine("Revenue / total work hour", money(fc.revPerWorkHour,true))+
+          statLine("Breakeven sessions / Friday", num(fc.breakeven))+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+  '</div>'+
+  '<div class="grid-3" style="margin-top:20px">'+
+    '<div class="stat-tile"><div class="stat-label">Monthly profit</div><div class="stat-value tnum '+(fc.monthlyProfit>=0?"pos":"neg")+'">'+money(fc.monthlyProfit)+'</div></div>'+
+    '<div class="stat-tile"><div class="stat-label">Annual take-home</div><div class="stat-value tnum '+(fc.annualTakeHome>=0?"pos":"neg")+'">'+money(fc.annualTakeHome)+'</div>'+
+      '<div class="stat-note">'+Math.round(fc.annualTakeHome/1000)+'k of $100k floor · '+Math.round(fc.annualTakeHome/1600)/10+'% of $160k target</div></div>'+
+    '<div class="stat-tile"><div class="stat-label">vs. Beach Kids comp</div><div class="stat-value tnum '+((fc.annualTakeHome-f.beachKidsComp)>=0?"pos":"neg")+'">'+((fc.annualTakeHome-f.beachKidsComp)>=0?"+":"")+money(fc.annualTakeHome-f.beachKidsComp)+'</div></div>'+
+  '</div>'+
+  '<div class="card" style="margin-top:20px">'+
+    '<div class="flex-between">'+
+      '<div><h3 class="section-title">One-time start-up costs</h3><p class="helptext">Separate from the recurring model above.</p></div>'+
+      '<div style="text-align:right"><div class="stat-label">Months to recoup</div><div class="mono tnum" style="font-weight:600;font-size:18px">'+(fc.monthsToRecoup==null?"—":fc.monthsToRecoup)+'</div></div>'+
+    '</div>'+
+    '<div class="table-scroll" style="margin-top:12px"><table class="datatable"><thead><tr><th>Item</th><th style="text-align:right">Amount</th></tr></thead><tbody>'+
+      STARTUP_COSTS.map(function(c){ return '<tr><td>'+esc(c.item)+'</td><td class="mono tnum" style="text-align:right">'+money(c.amt)+'</td></tr>'; }).join("")+
+      '<tr><td><b>Total</b></td><td class="mono tnum" style="text-align:right"><b>'+money(fc.startupTotal)+'</b></td></tr>'+
+    '</tbody></table></div>'+
+  '</div>';
+}
+
+/* ============================== VIEW: GROWTH GRID ============================== */
+
+var gridPrimaryMetric = "monthly";
+function poolHoursForSessions(s, baseHours){
+  if(s<=2) return 2;
+  if(s<=4) return 3;
+  return Math.max(baseHours,4);
+}
+function viewGrid(){
+  var f = state.financial || FIN_DEFAULTS;
+  var weeksPerMonth = f.fridaysPerMonth || 4;
+  var rows = [1,2,3,4,5,6], cols = [1,2,3,4];
+  var body = rows.map(function(sessions){
+    var cells = cols.map(function(days){
+      var workDaysPerMonth = days*weeksPerMonth;
+      var revenuePerDay = sessions*f.sessionPrice;
+      var poolHours = poolHoursForSessions(sessions, f.poolHours);
+      var poolCostPerDay = f.poolRate*poolHours;
+      var processingPerDay = revenuePerDay*(f.processingPct/100);
+      var mileagePerDay = f.miles*f.mileageRate;
+      var fixedPerMonth = f.insurance+f.software+f.supplies;
+      var monthlyRevenue = revenuePerDay*workDaysPerMonth;
+      var monthlyVariable = (poolCostPerDay+processingPerDay+mileagePerDay)*workDaysPerMonth;
+      var monthlyProfit = monthlyRevenue-monthlyVariable-fixedPerMonth;
+      var annualTakeHome = monthlyProfit*12*(1-f.taxPct/100);
+      var cls = annualTakeHome>=f.beachKidsComp ? "green" : (annualTakeHome>=0 ? "gold" : "coral");
+      var primary = gridPrimaryMetric==="monthly" ? monthlyProfit : annualTakeHome;
+      var secondary = gridPrimaryMetric==="monthly" ? annualTakeHome : monthlyProfit;
+      var secLabel = gridPrimaryMetric==="monthly" ? "yr" : "mo";
+      return '<td class="grid-cell '+cls+'">'+
+        '<div class="cell-main tnum">'+money(primary)+'</div>'+
+        '<div class="cell-sub tnum">'+money(secondary)+' /'+secLabel+'</div>'+
+        (annualTakeHome<0?'<div class="cell-warn">loses money at this pace</div>':'')+
+        '</td>';
+    }).join("");
+    return '<tr><th style="text-align:right;padding-right:10px">'+sessions+'</th>'+cells+'</tr>';
+  }).join("");
+  var colHeads = cols.map(function(d){ return '<th>'+d+' day'+(d>1?"s":"")+'/wk</th>'; }).join("");
+
+  return '' +
+  '<div class="view-head">'+
+    '<div class="view-eyebrow">Growth Scenario Grid</div>'+
+    '<h1 class="view-title">At what pace does this beat Beach Kids?</h1>'+
+    '<p class="view-sub">Rows are sessions seen per work day, columns are days worked per week. Each cell projects that pace sustained all year. Pool hours booked scale down at low volume (2 hrs at 1–2 sessions, 3 hrs at 3–4, '+f.poolHours+' hrs at 5–6) rather than assuming a full '+f.poolHours+'-hour booking every day.</p>'+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="flex-between" style="margin-bottom:6px">'+
+      '<div class="wrap-gap">'+
+        pillTag("Beach Kids comp: "+money(f.beachKidsComp))+
+        pillTag("Green = at/above comp · Gold = positive, below comp · Coral = losing money")+
+      '</div>'+
+      '<div class="segmented">'+
+        '<button data-action="gridMetric" data-metric="monthly" class="'+(gridPrimaryMetric==="monthly"?"active":"")+'">Monthly profit</button>'+
+        '<button data-action="gridMetric" data-metric="annual" class="'+(gridPrimaryMetric==="annual"?"active":"")+'">Annual take-home</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="table-scroll" style="margin-top:10px">'+
+      '<table class="grid-table"><thead><tr><th></th>'+colHeads+'</tr></thead><tbody>'+body+'</tbody></table>'+
+    '</div>'+
+    '<p class="helptext" style="margin-top:10px">Sessions/day (rows) assume ~1 clinical hour each; fixed overhead ($'+num(f.insurance+f.software+f.supplies)+'/mo) is spread across the month regardless of pace, which is why very low-volume cells can still run negative &mdash; that is a real breakeven signal, not a display error.</p>'+
+  '</div>';
+}
+
+/* ============================== VIEW: GROWTH STAGES ============================== */
+
+function viewStages(){
+  var current = state.growth ? state.growth.stage : 1;
+  var rows = STAGES.map(function(s){
+    return '<div class="stage-row'+(s.n===current?" current":"")+'">'+
+      '<div class="stage-num">'+s.n+'</div>'+
+      '<div>'+esc(s.bk)+'<div class="helptext" style="font-size:11px">Beach Kids</div></div>'+
+      '<div>'+esc(s.biz)+'<div class="helptext" style="font-size:11px">Business</div></div>'+
+      '<div style="font-size:13px">'+esc(s.criteria)+'</div>'+
+      '<div>'+(s.n===current?'<span class="pill progress">Now</span>':'<button class="btn small" data-action="setStage" data-stage="'+s.n+'">Set</button>')+'</div>'+
+    '</div>';
+  }).join("");
+
+  return '' +
+  '<div class="view-head">'+
+    '<div class="view-eyebrow">Growth Stages</div>'+
+    '<h1 class="view-title">Beach Kids ↔ business, over time</h1>'+
+    '<p class="view-sub">This is a manual toggle, not something calculated automatically — mark which stage you’re actually in, and it shows alongside what the plan predicted.</p>'+
+  '</div>'+
+  '<div class="card">'+rows+'</div>'+
+  '<div class="card" style="margin-top:16px">'+
+    '<label class="field-label">Notes on the current stage</label>'+
+    '<textarea class="field editable" data-action="growthNotes" placeholder="Why we are here, what would move us up…">'+esc(state.growth?state.growth.notes:"")+'</textarea>'+
+  '</div>';
+}
+
+/* ============================== VIEW: EXIT THRESHOLD ============================== */
+
+function viewExit(){
+  var et = state.exitThreshold || {checks:EXIT_ITEMS.map(function(){return false;}), gut:null, gutNotes:""};
+  var metCount = et.checks.filter(Boolean).length;
+  var items = EXIT_ITEMS.map(function(label,i){
+    var checked = !!et.checks[i];
+    return '<div class="checklist-item'+(checked?" done":"")+'">'+
+      '<input type="checkbox" data-action="exitCheck" data-idx="'+i+'" '+(checked?"checked":"")+'>'+
+      '<span>'+esc(label)+'</span></div>';
+  }).join("");
+
+  return '' +
+  '<div class="view-head">'+
+    '<div class="view-eyebrow">Exit Threshold</div>'+
+    '<h1 class="view-title">Before leaving Beach Kids entirely</h1>'+
+    '<p class="view-sub">Compare business owner income (after expenses, taxes, health insurance, retirement, time off, and a volatility buffer) against total Beach Kids compensation.</p>'+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="flex-between"><h3 class="section-title">Checklist</h3><span class="pill '+(metCount===10?"complete":"progress")+'">'+metCount+' / 10 criteria met</span></div>'+
+    '<div style="margin-top:10px">'+items+'</div>'+
+  '</div>'+
+  '<div class="card" style="margin-top:16px">'+
+    '<h3 class="section-title">The gut check</h3>'+
+    '<p class="helptext" style="margin:4px 0 12px">'+esc(GUT_CHECK_Q)+'</p>'+
+    '<div class="segmented">'+
+      '<button data-action="gutCheck" data-val="yes" class="'+(et.gut==="yes"?"active":"")+'">Yes</button>'+
+      '<button data-action="gutCheck" data-val="no" class="'+(et.gut==="no"?"active":"")+'">No</button>'+
+    '</div>'+
+    '<textarea class="field editable" style="margin-top:12px" data-action="gutNotes" placeholder="Why…">'+esc(et.gutNotes)+'</textarea>'+
+  '</div>';
+}
+
+/* ============================== VIEW: NOTES ============================== */
+
+function noteComposer(){
+  return '<div style="margin-top:12px">'+
+    '<textarea class="field editable" id="noteComposer" placeholder="'+(identity?"Write a note for "+(identity==="Judy"?"Emelia":"Judy")+"…":"Set your name in the sidebar first…")+'" '+(identity?"":"disabled")+'></textarea>'+
+    '<div style="margin-top:8px;text-align:right"><button class="btn primary small" data-action="sendNote" '+(identity?"":"disabled")+'>Send note</button></div>'+
+  '</div>';
+}
+function noteCardHtml(n){
+  return '<div class="note-card">'+
+    '<span class="author-badge" style="background:'+avatarColor(n.author)+'">'+esc(initials(n.author))+'</span>'+
+    '<div style="flex:1;min-width:0">'+
+      '<div class="note-meta"><b style="color:var(--text)">'+esc(n.author||"Someone")+'</b><span>·</span><span>'+timeAgo(n.createdAt)+'</span></div>'+
+      '<p>'+esc(n.text)+'</p>'+
+    '</div>'+
+  '</div>';
+}
+function viewNotes(){
+  return '' +
+  '<div class="view-head">'+
+    '<div class="view-eyebrow">Notes</div>'+
+    '<h1 class="view-title">Back and forth</h1>'+
+    '<p class="view-sub">A shared thread for anything that doesn’t belong on a specific week — questions, updates, "call me about this."</p>'+
+  '</div>'+
+  '<div class="card">'+noteComposer()+'</div>'+
+  '<div class="stack" style="gap:12px;margin-top:16px">'+
+    (state.notes.length ? state.notes.map(noteCardHtml).join("") : '<div class="card" style="border:1px dashed var(--border)"><p style="margin:0;color:var(--text-faint);font-style:italic">No notes yet.</p></div>')+
+  '</div>';
+}
+
+/* ============================== ROUTER ============================== */
+
+var VIEWS = {
+  overview: viewOverview, roadmap: viewRoadmap, pool: viewPool, demand: viewDemand,
+  referrals: viewReferrals, financial: viewFinancial, grid: viewGrid, stages: viewStages,
+  exit: viewExit, notes: viewNotes
+};
+
+var typingGuard = false;
+function renderView(){
+  if(typingGuard) return;
+  var fn = VIEWS[route] || viewOverview;
+  document.getElementById("content").innerHTML = fn();
+}
+function fullRender(){ renderSidebarAndNav(); renderView(); }
+
+function setRoute(r){
+  route = VIEWS[r] ? r : "overview";
+  location.hash = route;
+  fullRender();
+}
+window.addEventListener("hashchange", function(){
+  var r = location.hash.replace("#","");
+  route = VIEWS[r] ? r : "overview";
+  fullRender();
+});
+
+/* ============================== EVENTS ============================== */
+
+document.getElementById("navlist").addEventListener("click", function(e){
+  var item = e.target.closest(".navitem");
+  if(item) setRoute(item.getAttribute("data-route"));
+});
+
+document.getElementById("identityRow").addEventListener("keydown", function(e){
+  if(e.target.id==="identityInput" && e.key==="Enter"){
+    var v = e.target.value.trim();
+    if(v){ identity = v; try{ localStorage.setItem("fp_identity", v); }catch(err){} renderSidebar(); renderView(); }
+  }
+});
+document.getElementById("identityRow").addEventListener("blur", function(e){
+  if(e.target.id==="identityInput"){
+    var v = e.target.value.trim();
+    if(v){ identity = v; try{ localStorage.setItem("fp_identity", v); }catch(err){} }
+    renderSidebar(); renderView();
+  }
+}, true);
+document.getElementById("identityRow").addEventListener("click", function(e){
+  if(e.target.id==="identityLabel"){
+    identity = "";
+    try{ localStorage.removeItem("fp_identity"); }catch(err){}
+    renderSidebar();
+  }
+});
+
+var content = document.getElementById("content");
+
+content.addEventListener("click", function(e){
+  var t;
+  if((t = e.target.closest('[data-action="toggleWeek"]'))){
+    var n = parseInt(t.getAttribute("data-week"),10);
+    state.openWeek = state.openWeek===n ? null : n;
+    renderView();
+    return;
+  }
+  if((t = e.target.closest('[data-action="setStage"]'))){
+    var stage = parseInt(t.getAttribute("data-stage"),10);
+    mutateSection("growth", function(fresh){ return Object.assign({stage:1,notes:""}, fresh||{}, {stage:stage}); });
+    return;
+  }
+  if((t = e.target.closest('[data-action="gridMetric"]'))){
+    gridPrimaryMetric = t.getAttribute("data-metric");
+    renderView();
+    return;
+  }
+  if((t = e.target.closest('[data-action="gutCheck"]'))){
+    var val = t.getAttribute("data-val");
+    mutateSection("exitThreshold", function(fresh){
+      var base = Object.assign({checks:EXIT_ITEMS.map(function(){return false;}),gut:null,gutNotes:""}, fresh||{});
+      return Object.assign({}, base, {gut: base.gut===val?null:val});
+    });
+    return;
+  }
+  if((t = e.target.closest('[data-action="addEntry"]'))){
+    handleAddEntry(t.getAttribute("data-kind"));
+    return;
+  }
+  if((t = e.target.closest('[data-action="deleteEntry"]'))){
+    var kind = t.getAttribute("data-kind"), id = t.getAttribute("data-id");
+    mutateSection(kind, function(fresh){
+      var map = Object.assign({}, fresh||{});
+      delete map[id];
+      return map;
+    });
+    return;
+  }
+  if((t = e.target.closest('[data-action="sendNote"]'))){
+    handleSendNote();
+    return;
+  }
+});
+
+content.addEventListener("change", function(e){
+  var t = e.target;
+  if(t.matches('[data-action="toggleTask"]')){
+    var n = parseInt(t.getAttribute("data-week"),10), idx = parseInt(t.getAttribute("data-idx"),10);
+    var checked = t.checked;
+    mutateSection("weeks", function(fresh){
+      var weeks = Object.assign({}, fresh||{});
+      var eff = weeks[n] || weekDefaults(WEEKS[n-1]);
+      var tasksDone = eff.tasksDone.slice(); tasksDone[idx] = checked;
+      weeks[n] = Object.assign({}, eff, {tasksDone:tasksDone});
+      return weeks;
+    });
+    return;
+  }
+  if(t.matches('[data-action="statusOverride"]')){
+    var n2 = parseInt(t.getAttribute("data-week"),10), val2 = t.value || null;
+    mutateSection("weeks", function(fresh){
+      var weeks = Object.assign({}, fresh||{});
+      var eff = weeks[n2] || weekDefaults(WEEKS[n2-1]);
+      weeks[n2] = Object.assign({}, eff, {statusOverride:val2});
+      return weeks;
+    });
+    return;
+  }
+  if(t.matches('[data-action="finInput"]')){
+    var key = t.getAttribute("data-key"), v = parseFloat(t.value)||0;
+    mutateSection("financial", function(fresh){
+      return Object.assign({}, FIN_DEFAULTS, fresh||{}, (function(){ var o={}; o[key]=v; return o; })());
+    });
+    return;
+  }
+  if(t.matches('[data-action="exitCheck"]')){
+    var idx2 = parseInt(t.getAttribute("data-idx"),10), checked2 = t.checked;
+    mutateSection("exitThreshold", function(fresh){
+      var base = Object.assign({checks:EXIT_ITEMS.map(function(){return false;}), gut:null, gutNotes:""}, fresh||{});
+      var checks = base.checks.slice(); checks[idx2] = checked2;
+      return Object.assign({}, base, {checks:checks});
+    });
+    return;
+  }
+});
+
+var GUARDED_ACTIONS = ["weekNotes","brainstorm","growthNotes","gutNotes"];
+function isGuardedField(el){
+  return el && el.tagName==="TEXTAREA" && GUARDED_ACTIONS.indexOf(el.getAttribute("data-action"))>-1;
+}
+content.addEventListener("focusin", function(e){ if(isGuardedField(e.target)) typingGuard = true; });
+content.addEventListener("focusout", function(e){ if(isGuardedField(e.target)){ typingGuard = false; renderView(); } }, true);
+
+var debouncedWeekNotes = debounce(function(n, text){
+  mutateSection("weeks", function(fresh){
+    var weeks = Object.assign({}, fresh||{});
+    var eff = weeks[n] || weekDefaults(WEEKS[n-1]);
+    weeks[n] = Object.assign({}, eff, {notes:text, notesBy:identity||"Someone", notesAt:new Date().toISOString()});
+    return weeks;
+  });
+}, 700);
+var debouncedBrainstorm = debounce(function(text){
+  mutateSection("brainstorm", function(){ return {text:text}; });
+}, 700);
+var debouncedGrowthNotes = debounce(function(text){
+  mutateSection("growth", function(fresh){ return Object.assign({stage:1}, fresh||{}, {notes:text}); });
+}, 700);
+var debouncedGutNotes = debounce(function(text){
+  mutateSection("exitThreshold", function(fresh){
+    return Object.assign({checks:EXIT_ITEMS.map(function(){return false;}), gut:null}, fresh||{}, {gutNotes:text});
+  });
+}, 700);
+
+content.addEventListener("input", function(e){
+  var t = e.target;
+  if(t.matches('[data-action="weekNotes"]')) debouncedWeekNotes(parseInt(t.getAttribute("data-week"),10), t.value);
+  else if(t.matches('[data-action="brainstorm"]')) debouncedBrainstorm(t.value);
+  else if(t.matches('[data-action="growthNotes"]')) debouncedGrowthNotes(t.value);
+  else if(t.matches('[data-action="gutNotes"]')) debouncedGutNotes(t.value);
+});
+
+function handleAddEntry(kind){
+  function val(id){ var el=document.getElementById(id); return el?el.value:""; }
+  var payload;
+  if(kind==="pool"){
+    payload = {facility:val("f_facility"), city:val("f_city"), rate:parseFloat(val("f_rate"))||0,
+      friday:val("f_friday"), watertemp:val("f_watertemp"), therapistok:val("f_therapistok"),
+      lifeguard:val("f_lifeguard"), datecontacted:val("f_datecontacted"), notes:val("f_notes")};
+  } else if(kind==="demand"){
+    payload = {contact:val("f_contact"), role:val("f_role"), date:val("f_date"),
+      wouldpay:val("f_wouldpay"), referral:val("f_referral"), notes:val("f_notes")};
+  } else {
+    payload = {name:val("f_name"), type:val("f_type"), contactinfo:val("f_contactinfo"),
+      outreach:val("f_outreach")||"Not contacted", notes:val("f_notes")};
+  }
+  var hasContent = Object.keys(payload).some(function(k){ return payload[k] && payload[k]!=="" && k!=="notes"; });
+  if(!hasContent) return;
+  payload.createdBy = identity || "Someone";
+  payload.createdAt = new Date().toISOString();
+  var id = genId();
+  mutateSection(kind, function(fresh){
+    var map = Object.assign({}, fresh||{});
+    map[id] = payload;
+    return map;
+  });
+}
+function handleSendNote(){
+  var el = document.getElementById("noteComposer");
+  if(!el || !identity) return;
+  var text = el.value.trim();
+  if(!text) return;
+  var id = genId();
+  mutateSection("notes", function(fresh){
+    var map = Object.assign({}, fresh||{});
+    map[id] = {author:identity, text:text, createdAt:new Date().toISOString()};
+    return map;
+  });
+  el.value = "";
+}
+
+/* ============================== INIT ============================== */
+
+function startApp(){
+  fullRender();
+  setInterval(function(){
+    if(document.visibilityState==="visible" && !typingGuard) pollAll();
+  }, 5000);
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState==="visible") pollAll();
+  });
+}
+
+async function init(){
+  route = (location.hash||"#overview").replace("#","");
+  if(!VIEWS[route]) route = "overview";
+  try{
+    await apiGetAll();
+    showGate(false);
+    startApp();
+  }catch(err){
+    if(err && err.authRequired){ showGate(true); return; }
+    // not_configured, or a transient error — still show the app (local fallback / retry loop)
+    showGate(false);
+    startApp();
+  }
+}
+init();
+
+})();
+</script>
+</body>
+</html>
