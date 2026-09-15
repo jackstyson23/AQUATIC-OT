@@ -218,9 +218,14 @@
     display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
     font-size:10.5px;font-weight:700;color:#fff;flex:none;
   }
-  .note-card{border:1px solid var(--border-soft);border-radius:var(--radius-m);padding:14px 16px;background:var(--surface);display:flex;gap:11px}
+  .note-card{border:1px solid var(--border-soft);border-radius:var(--radius-m);padding:14px 16px;background:var(--surface);display:flex;gap:11px;align-items:flex-start}
   .note-card p{margin:4px 0 0;font-size:13.5px;white-space:pre-wrap}
   .note-meta{font-size:11.5px;color:var(--text-faint);display:flex;gap:8px;align-items:center}
+  .note-remove{
+    flex:none;border:none;background:transparent;color:var(--text-faint);cursor:pointer;
+    width:22px;height:22px;border-radius:6px;font-size:16px;line-height:1;
+  }
+  .note-remove:hover{background:var(--coral-bg);color:var(--coral)}
 
   .segmented{display:inline-flex;border:1px solid var(--border);border-radius:var(--radius-s);overflow:hidden}
   .segmented button{border:none;background:var(--surface);padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text-muted)}
@@ -429,26 +434,28 @@ var STARTUP_COSTS = [
 ];
 
 var FIN_DEFAULTS = {
-  sessionsPerFriday:3, sessionPrice:160, fridaysPerMonth:4, evalsPerMonth:1, evalPrice:250,
+  sessionsPerFriday:3, daysPerWeek:1, sessionPrice:160, fridaysPerMonth:4, evalsPerMonth:1, evalPrice:250,
   poolRate:45, poolHours:4, processingPct:3.0, insurance:45, software:35, supplies:25,
   miles:24, mileageRate:0.67, adminHours:2, driveHours:0.5, taxPct:28, beachKidsComp:92000
 };
+// sessionsPerFriday and daysPerWeek are rendered as their own segmented
+// toggles (see viewFinancial) rather than plain number inputs, so they're
+// not in this list.
 var FIN_FIELDS = [
-  ["sessionsPerFriday","Treatment sessions / Friday"],
   ["sessionPrice","Price / session ($)"],
-  ["fridaysPerMonth","Fridays / month"],
+  ["fridaysPerMonth","Weeks / month"],
   ["evalsPerMonth","Evaluations / month"],
   ["evalPrice","Price / evaluation ($)"],
   ["poolRate","Pool rental rate ($/hr)"],
-  ["poolHours","Pool hours booked / Friday"],
+  ["poolHours","Pool hours booked / work day"],
   ["processingPct","Payment processing (%)"],
   ["insurance","Liability insurance ($/mo)"],
   ["software","EHR / scheduling software ($/mo)"],
   ["supplies","Supplies ($/mo)"],
-  ["miles","Round-trip miles / Friday"],
+  ["miles","Round-trip miles / work day"],
   ["mileageRate","Mileage rate ($/mi)"],
-  ["adminHours","Unpaid admin hrs / Friday"],
-  ["driveHours","Drive time hrs / Friday"],
+  ["adminHours","Unpaid admin hrs / work day"],
+  ["driveHours","Drive time hrs / work day"],
   ["taxPct","Tax set-aside (%)"],
   ["beachKidsComp","Beach Kids total comp / yr ($)"]
 ];
@@ -709,22 +716,31 @@ function renderSidebarAndNav(){ renderNav(); renderSidebar(); }
 
 function computeForecast(f){
   f = f || FIN_DEFAULTS;
+  var daysPerWeek = f.daysPerWeek || 1;
+  var workDaysPerMonth = daysPerWeek * (f.fridaysPerMonth||1);
+
+  // Figures below are "per work day" (what a Friday-only plan calls "per
+  // Friday"); at daysPerWeek=1 these formulas are identical to the
+  // original per-Friday model. Evaluation revenue and fixed overhead are
+  // amortized across ALL work days in the month, not just one day/week,
+  // so they shrink as more days are worked — same treatment the Growth
+  // Scenario Grid uses.
   var treatRev = f.sessionsPerFriday * f.sessionPrice;
-  var evalRev = (f.evalsPerMonth * f.evalPrice) / (f.fridaysPerMonth||1);
+  var evalRev = (f.evalsPerMonth * f.evalPrice) / (workDaysPerMonth||1);
   var grossRev = treatRev + evalRev;
   var poolCost = f.poolRate * f.poolHours;
   var processingFee = grossRev * (f.processingPct/100);
   var mileageCost = f.miles * f.mileageRate;
-  var fixedOverhead = (f.insurance + f.software + f.supplies) / (f.fridaysPerMonth||1);
+  var fixedOverhead = (f.insurance + f.software + f.supplies) / (workDaysPerMonth||1);
   var totalExp = poolCost + processingFee + mileageCost + fixedOverhead;
   var netProfit = grossRev - totalExp;
   var clinicalHours = f.sessionsPerFriday * 1;
   var totalWorkHours = clinicalHours + f.adminHours + f.driveHours;
   var revPerClinHour = clinicalHours>0 ? grossRev/clinicalHours : 0;
   var revPerWorkHour = totalWorkHours>0 ? grossRev/totalWorkHours : 0;
-  var monthlyRevenue = grossRev * f.fridaysPerMonth;
-  var monthlyExpenses = totalExp * f.fridaysPerMonth;
-  var monthlyProfit = netProfit * f.fridaysPerMonth;
+  var monthlyRevenue = grossRev * workDaysPerMonth;
+  var monthlyExpenses = totalExp * workDaysPerMonth;
+  var monthlyProfit = netProfit * workDaysPerMonth;
   var annualProfit = monthlyProfit * 12;
   var annualTakeHome = annualProfit * (1 - f.taxPct/100);
   var breakeven = Math.ceil((poolCost+fixedOverhead+mileageCost) / (f.sessionPrice*(1-f.processingPct/100)));
@@ -735,7 +751,8 @@ function computeForecast(f){
     clinicalHours:clinicalHours, totalWorkHours:totalWorkHours, revPerClinHour:revPerClinHour,
     revPerWorkHour:revPerWorkHour, monthlyRevenue:monthlyRevenue, monthlyExpenses:monthlyExpenses,
     monthlyProfit:monthlyProfit, annualProfit:annualProfit, annualTakeHome:annualTakeHome,
-    breakeven:breakeven, startupTotal:startupTotal, monthsToRecoup:monthsToRecoup};
+    breakeven:breakeven, startupTotal:startupTotal, monthsToRecoup:monthsToRecoup,
+    daysPerWeek:daysPerWeek, workDaysPerMonth:workDaysPerMonth};
 }
 
 /* ============================== WEEK HELPERS ============================== */
@@ -790,10 +807,12 @@ function viewOverview(){
   var cw = currentWeek();
   var cwData = WEEKS[cw-1];
   var cwEff = weekEffective(cw);
-  var incompleteTasks = cwData.tasks.filter(function(t,i){ return !cwEff.tasksDone[i]; });
+  var incompleteTasks = cwData.tasks
+    .map(function(t,i){ return {text:t, idx:i}; })
+    .filter(function(o){ return !cwEff.tasksDone[o.idx]; });
   var completeCount = WEEKS.filter(function(w){ return weekStatus(w.n)==="complete"; }).length;
   var recentNotes = state.notes.slice(0,4);
-  var vsBeach = fc.annualTakeHome - f.beachKidsComp;
+  var vsBeach = fc.annualProfit - f.beachKidsComp;
 
   return '' +
   '<div class="view-head">'+
@@ -813,26 +832,26 @@ function viewOverview(){
       '<div class="stat-note">Currently on Week '+cw+' — '+esc(cwData.title)+'</div>'+
     '</div>'+
     '<div class="stat-tile">'+
-      '<div class="stat-label">Annual take-home vs. Beach Kids</div>'+
+      '<div class="stat-label">Annual profit vs. Beach Kids (pre-tax)</div>'+
       '<div class="stat-value tnum '+(vsBeach>=0?"pos":"neg")+'">'+(vsBeach>=0?"+":"")+money(vsBeach)+'</div>'+
-      '<div class="stat-note">At current forecast inputs</div>'+
+      '<div class="stat-note">Comparing pre-tax to pre-tax, at current forecast inputs</div>'+
     '</div>'+
   '</div>'+
   '<div class="row" style="align-items:stretch">'+
     '<div class="card" style="flex:1.3">'+
       '<h3 class="section-title">Next up — Week '+cw+'</h3>'+
       '<p class="helptext" style="margin:4px 0 14px">'+esc(cwData.goal)+'</p>'+
-      (incompleteTasks.length ? '<ul class="task-list">'+incompleteTasks.slice(0,5).map(function(t){
-        return '<li class="task-item"><span style="width:15px;height:15px;border-radius:3px;border:1.5px solid var(--border);flex:none;margin-top:2px"></span><label>'+esc(t)+'</label></li>';
+      (incompleteTasks.length ? '<ul class="task-list">'+incompleteTasks.slice(0,5).map(function(o){
+        return '<li class="task-item"><input type="checkbox" data-action="toggleTask" data-week="'+cw+'" data-idx="'+o.idx+'"><label>'+esc(o.text)+'</label></li>';
       }).join("")+'</ul>' : '<p class="helptext">All tasks for this week are checked off — mark it complete on the Roadmap tab.</p>')+
       '<div style="margin-top:14px"><a href="#roadmap" class="btn small">Open full roadmap →</a></div>'+
     '</div>'+
     '<div class="card" style="flex:1">'+
-      '<h3 class="section-title">Friday economics, right now</h3>'+
+      '<h3 class="section-title">Work-day economics, right now</h3>'+
       '<div class="stack" style="gap:10px;margin-top:10px">'+
-        statLine("Net profit / Friday", money(fc.netProfit,true))+
+        statLine("Net profit / work day", money(fc.netProfit,true))+
         statLine("Monthly profit", money(fc.monthlyProfit,true))+
-        statLine("Breakeven sessions / Friday", num(fc.breakeven))+
+        statLine("Breakeven sessions / work day", num(fc.breakeven))+
       '</div>'+
       '<div style="margin-top:14px"><a href="#financial" class="btn small">Open financial forecast →</a></div>'+
     '</div>'+
@@ -1005,12 +1024,25 @@ function viewFinancial(){
       '<input class="field editable mono" type="number" step="any" data-action="finInput" data-key="'+key+'" value="'+val+'">'+
       '</div>';
   }).join("");
+  var sessionsPicker = [1,2,3,4,5,6].map(function(n){
+    return '<button data-action="sessionsPicker" data-value="'+n+'" class="'+(f.sessionsPerFriday===n?"active":"")+'">'+n+'</button>';
+  }).join("");
+  var daysPicker = [1,2,3,4].map(function(n){
+    return '<button data-action="daysPicker" data-value="'+n+'" class="'+(f.daysPerWeek===n?"active":"")+'">'+n+'</button>';
+  }).join("");
 
   return '' +
   '<div class="view-head">'+
     '<div class="view-eyebrow">Financial Forecast</div>'+
-    '<h1 class="view-title">The per-Friday math</h1>'+
+    '<h1 class="view-title">The per-work-day math</h1>'+
     '<p class="view-sub">Every input below is shared and editable — change a number and the forecast recalculates for both of you.</p>'+
+  '</div>'+
+  '<div class="card" style="margin-bottom:20px">'+
+    '<div class="row" style="gap:28px;flex-wrap:wrap">'+
+      '<div><label class="field-label">Sessions / work day</label><div class="segmented">'+sessionsPicker+'</div></div>'+
+      '<div><label class="field-label">Days worked / week</label><div class="segmented">'+daysPicker+'</div></div>'+
+      '<div><label class="field-label">Work days / month</label><div class="mono tnum" style="font-weight:600;font-size:18px;padding-top:4px">'+num(fc.workDaysPerMonth)+'</div></div>'+
+    '</div>'+
   '</div>'+
   '<div class="row" style="align-items:flex-start;gap:22px">'+
     '<div class="card" style="flex:1.1">'+
@@ -1019,7 +1051,7 @@ function viewFinancial(){
     '</div>'+
     '<div class="stack" style="flex:1;gap:16px">'+
       '<div class="card">'+
-        '<h3 class="section-title">Per Friday</h3>'+
+        '<h3 class="section-title">Per work day</h3>'+
         '<div class="stack" style="gap:9px;margin-top:10px">'+
           statLine("Treatment revenue", money(fc.treatRev,true))+
           statLine("Evaluation revenue", money(fc.evalRev,true))+
@@ -1031,26 +1063,27 @@ function viewFinancial(){
           statLine("Fixed overhead", money(fc.fixedOverhead,true))+
           statLine("Total expenses", money(fc.totalExp,true))+
           '<div style="border-top:1px solid var(--border-soft);margin:4px 0"></div>'+
-          statLine("Net profit / Friday", money(fc.netProfit,true))+
+          statLine("Net profit / work day", money(fc.netProfit,true))+
         '</div>'+
       '</div>'+
       '<div class="card">'+
         '<h3 class="section-title">Time & rate</h3>'+
         '<div class="stack" style="gap:9px;margin-top:10px">'+
-          statLine("Clinical hours / Friday", num(fc.clinicalHours))+
-          statLine("Total work hours / Friday", num(fc.totalWorkHours,1))+
+          statLine("Clinical hours / work day", num(fc.clinicalHours))+
+          statLine("Total work hours / work day", num(fc.totalWorkHours,1))+
           statLine("Revenue / clinical hour", money(fc.revPerClinHour,true))+
           statLine("Revenue / total work hour", money(fc.revPerWorkHour,true))+
-          statLine("Breakeven sessions / Friday", num(fc.breakeven))+
+          statLine("Breakeven sessions / work day", num(fc.breakeven))+
         '</div>'+
       '</div>'+
     '</div>'+
   '</div>'+
   '<div class="grid-3" style="margin-top:20px">'+
     '<div class="stat-tile"><div class="stat-label">Monthly profit</div><div class="stat-value tnum '+(fc.monthlyProfit>=0?"pos":"neg")+'">'+money(fc.monthlyProfit)+'</div></div>'+
-    '<div class="stat-tile"><div class="stat-label">Annual take-home</div><div class="stat-value tnum '+(fc.annualTakeHome>=0?"pos":"neg")+'">'+money(fc.annualTakeHome)+'</div>'+
+    '<div class="stat-tile"><div class="stat-label">Annual take-home (after tax)</div><div class="stat-value tnum '+(fc.annualTakeHome>=0?"pos":"neg")+'">'+money(fc.annualTakeHome)+'</div>'+
       '<div class="stat-note">'+Math.round(fc.annualTakeHome/1000)+'k of $100k floor · '+Math.round(fc.annualTakeHome/1600)/10+'% of $160k target</div></div>'+
-    '<div class="stat-tile"><div class="stat-label">vs. Beach Kids comp</div><div class="stat-value tnum '+((fc.annualTakeHome-f.beachKidsComp)>=0?"pos":"neg")+'">'+((fc.annualTakeHome-f.beachKidsComp)>=0?"+":"")+money(fc.annualTakeHome-f.beachKidsComp)+'</div></div>'+
+    '<div class="stat-tile"><div class="stat-label">Annual profit (pre-tax)</div><div class="stat-value tnum '+(fc.annualProfit>=0?"pos":"neg")+'">'+money(fc.annualProfit)+'</div>'+
+      '<div class="stat-note">See the Growth Scenario Grid tab for how this compares to Beach Kids at different paces.</div></div>'+
   '</div>'+
   '<div class="card" style="margin-top:20px">'+
     '<div class="flex-between">'+
@@ -1067,11 +1100,6 @@ function viewFinancial(){
 /* ============================== VIEW: GROWTH GRID ============================== */
 
 var gridPrimaryMetric = "monthly";
-function poolHoursForSessions(s, baseHours){
-  if(s<=2) return 2;
-  if(s<=4) return 3;
-  return Math.max(baseHours,4);
-}
 function viewGrid(){
   var f = state.financial || FIN_DEFAULTS;
   var weeksPerMonth = f.fridaysPerMonth || 4;
@@ -1080,7 +1108,7 @@ function viewGrid(){
     var cells = cols.map(function(days){
       var workDaysPerMonth = days*weeksPerMonth;
       var revenuePerDay = sessions*f.sessionPrice;
-      var poolHours = poolHoursForSessions(sessions, f.poolHours);
+      var poolHours = sessions; // 1 session booked = 1 billed pool hour, exactly
       var poolCostPerDay = f.poolRate*poolHours;
       var processingPerDay = revenuePerDay*(f.processingPct/100);
       var mileagePerDay = f.miles*f.mileageRate;
@@ -1088,15 +1116,15 @@ function viewGrid(){
       var monthlyRevenue = revenuePerDay*workDaysPerMonth;
       var monthlyVariable = (poolCostPerDay+processingPerDay+mileagePerDay)*workDaysPerMonth;
       var monthlyProfit = monthlyRevenue-monthlyVariable-fixedPerMonth;
-      var annualTakeHome = monthlyProfit*12*(1-f.taxPct/100);
-      var cls = annualTakeHome>=f.beachKidsComp ? "green" : (annualTakeHome>=0 ? "gold" : "coral");
-      var primary = gridPrimaryMetric==="monthly" ? monthlyProfit : annualTakeHome;
-      var secondary = gridPrimaryMetric==="monthly" ? annualTakeHome : monthlyProfit;
+      var annualProfit = monthlyProfit*12; // pre-tax, so it's comparable to Beach Kids' pre-tax comp
+      var cls = annualProfit>=f.beachKidsComp ? "green" : (annualProfit>=0 ? "gold" : "coral");
+      var primary = gridPrimaryMetric==="monthly" ? monthlyProfit : annualProfit;
+      var secondary = gridPrimaryMetric==="monthly" ? annualProfit : monthlyProfit;
       var secLabel = gridPrimaryMetric==="monthly" ? "yr" : "mo";
       return '<td class="grid-cell '+cls+'">'+
         '<div class="cell-main tnum">'+money(primary)+'</div>'+
         '<div class="cell-sub tnum">'+money(secondary)+' /'+secLabel+'</div>'+
-        (annualTakeHome<0?'<div class="cell-warn">loses money at this pace</div>':'')+
+        (annualProfit<0?'<div class="cell-warn">loses money at this pace</div>':'')+
         '</td>';
     }).join("");
     return '<tr><th style="text-align:right;padding-right:10px">'+sessions+'</th>'+cells+'</tr>';
@@ -1107,23 +1135,24 @@ function viewGrid(){
   '<div class="view-head">'+
     '<div class="view-eyebrow">Growth Scenario Grid</div>'+
     '<h1 class="view-title">At what pace does this beat Beach Kids?</h1>'+
-    '<p class="view-sub">Rows are sessions seen per work day, columns are days worked per week. Each cell projects that pace sustained all year. Pool hours booked scale down at low volume (2 hrs at 1–2 sessions, 3 hrs at 3–4, '+f.poolHours+' hrs at 5–6) rather than assuming a full '+f.poolHours+'-hour booking every day.</p>'+
+    '<p class="view-sub">Rows are sessions seen per work day, columns are days worked per week. Each cell projects that pace sustained all year. Pool hours booked equal sessions seen exactly — 6 kids means 6 billed pool hours, not a flat booking regardless of how many clients show up.</p>'+
   '</div>'+
   '<div class="card">'+
     '<div class="flex-between" style="margin-bottom:6px">'+
       '<div class="wrap-gap">'+
-        pillTag("Beach Kids comp: "+money(f.beachKidsComp))+
-        pillTag("Green = at/above comp · Gold = positive, below comp · Coral = losing money")+
+        pillTag("Beach Kids comp (pre-tax): "+money(f.beachKidsComp))+
+        pillTag("Green = at/above comp · Gold = profitable, below comp · Coral = losing money")+
       '</div>'+
       '<div class="segmented">'+
         '<button data-action="gridMetric" data-metric="monthly" class="'+(gridPrimaryMetric==="monthly"?"active":"")+'">Monthly profit</button>'+
-        '<button data-action="gridMetric" data-metric="annual" class="'+(gridPrimaryMetric==="annual"?"active":"")+'">Annual take-home</button>'+
+        '<button data-action="gridMetric" data-metric="annual" class="'+(gridPrimaryMetric==="annual"?"active":"")+'">Annual profit</button>'+
       '</div>'+
     '</div>'+
     '<div class="table-scroll" style="margin-top:10px">'+
       '<table class="grid-table"><thead><tr><th></th>'+colHeads+'</tr></thead><tbody>'+body+'</tbody></table>'+
     '</div>'+
-    '<p class="helptext" style="margin-top:10px">Sessions/day (rows) assume ~1 clinical hour each; fixed overhead ($'+num(f.insurance+f.software+f.supplies)+'/mo) is spread across the month regardless of pace, which is why very low-volume cells can still run negative &mdash; that is a real breakeven signal, not a display error.</p>'+
+    '<p class="helptext" style="margin-top:10px"><b>This compares pre-tax to pre-tax:</b> every dollar figure above is business profit before Emelia\'s own income tax comes out, matched against Beach Kids’ pre-tax total comp — so it’s an apples-to-apples "which paycheck is bigger before taxes" comparison, not a real take-home number. Her actual spending money after ~'+num(f.taxPct)+'% tax set-aside will be lower than what’s shown here on both sides.</p>'+
+    '<p class="helptext" style="margin-top:6px">Sessions/day (rows) assume ~1 clinical hour each; fixed overhead ($'+num(f.insurance+f.software+f.supplies)+'/mo) is spread across the month regardless of pace, which is why very low-volume cells can still run negative &mdash; that is a real breakeven signal, not a display error.</p>'+
   '</div>';
 }
 
@@ -1202,6 +1231,7 @@ function noteCardHtml(n){
       '<div class="note-meta"><b style="color:var(--text)">'+esc(n.author||"Someone")+'</b><span>·</span><span>'+timeAgo(n.createdAt)+'</span></div>'+
       '<p>'+esc(n.text)+'</p>'+
     '</div>'+
+    '<button class="note-remove" data-action="deleteEntry" data-kind="notes" data-id="'+n.id+'" title="Delete this note" aria-label="Delete this note">×</button>'+
   '</div>';
 }
 function viewNotes(){
@@ -1292,6 +1322,20 @@ content.addEventListener("click", function(e){
     renderView();
     return;
   }
+  if((t = e.target.closest('[data-action="sessionsPicker"]'))){
+    var sVal = parseInt(t.getAttribute("data-value"),10);
+    mutateSection("financial", function(fresh){
+      return Object.assign({}, FIN_DEFAULTS, fresh||{}, {sessionsPerFriday:sVal});
+    });
+    return;
+  }
+  if((t = e.target.closest('[data-action="daysPicker"]'))){
+    var dVal = parseInt(t.getAttribute("data-value"),10);
+    mutateSection("financial", function(fresh){
+      return Object.assign({}, FIN_DEFAULTS, fresh||{}, {daysPerWeek:dVal});
+    });
+    return;
+  }
   if((t = e.target.closest('[data-action="gutCheck"]'))){
     var val = t.getAttribute("data-val");
     mutateSection("exitThreshold", function(fresh){
@@ -1361,9 +1405,16 @@ content.addEventListener("change", function(e){
   }
 });
 
-var GUARDED_ACTIONS = ["weekNotes","brainstorm","growthNotes","gutNotes","noteComposer"];
+// Any text/number/date/select field the user has focused blocks the
+// periodic poll from re-rendering (and thus destroying) it mid-edit.
+// Checkboxes and radios are excluded deliberately: they have nothing being
+// "typed" to lose, and things like status pills should update immediately.
+var NON_GUARDED_INPUT_TYPES = ["checkbox","radio","button","submit","reset"];
 function isGuardedField(el){
-  return el && el.tagName==="TEXTAREA" && GUARDED_ACTIONS.indexOf(el.getAttribute("data-action"))>-1;
+  if(!el) return false;
+  if(el.tagName==="TEXTAREA" || el.tagName==="SELECT") return true;
+  if(el.tagName==="INPUT") return NON_GUARDED_INPUT_TYPES.indexOf(el.type)===-1;
+  return false;
 }
 content.addEventListener("focusin", function(e){ if(isGuardedField(e.target)) typingGuard = true; });
 content.addEventListener("focusout", function(e){
