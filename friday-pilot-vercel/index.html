@@ -704,6 +704,10 @@ function renderSidebar(){
   var stage = state.growth ? state.growth.stage : 1;
   document.getElementById("sidebarStage").textContent = "Stage "+stage;
   var idRow = document.getElementById("identityRow");
+  // The background poll calls this every few seconds — don't blow away the
+  // name field while someone's mid-keystroke typing into it (this was
+  // exactly why a typed name could get cut short, e.g. "Emelia" -> "Em").
+  if(document.activeElement && document.activeElement.id==="identityInput") return;
   if(identity){
     idRow.innerHTML = '<span class="author-badge" style="background:'+avatarColor(identity)+'">'+esc(initials(identity))+'</span>'+
       '<span class="identity-name" id="identityLabel">'+esc(identity)+'</span>';
@@ -934,44 +938,68 @@ function viewRoadmap(){
 
 /* ============================== VIEW: LOGS ============================== */
 
-function logFormHtml(kind){
+function fieldsFor(kind, idPrefix, v){
+  v = v || {};
   if(kind==="pool"){
     return '<div class="grid-3">'+
-      textField("f_facility","Facility name")+ textField("f_city","City")+ numField("f_rate","Rate ($/hr)")+
-      textField("f_friday","Friday availability")+ textField("f_watertemp","Water temp")+ selectField("f_therapistok","Independent-therapist OK",["Yes","No","Asking"])+
-      selectField("f_lifeguard","Lifeguard required",["Yes","No","Asking"])+ dateField("f_datecontacted","Date contacted")+ textField("f_notes","Notes")+
-    '</div>'+addBtn("pool","Add facility");
+      textField(idPrefix+"facility","Facility name",v.facility)+ textField(idPrefix+"city","City",v.city)+ numField(idPrefix+"rate","Rate ($/hr)",v.rate)+
+      textField(idPrefix+"friday","Friday availability",v.friday)+ textField(idPrefix+"watertemp","Water temp",v.watertemp)+ selectField(idPrefix+"therapistok","Independent-therapist OK",["Yes","No","Asking"],v.therapistok)+
+      selectField(idPrefix+"lifeguard","Lifeguard required",["Yes","No","Asking"],v.lifeguard)+ dateField(idPrefix+"datecontacted","Date contacted",v.datecontacted)+ textField(idPrefix+"notes","Notes",v.notes)+
+    '</div>';
   }
   if(kind==="demand"){
     return '<div class="grid-3">'+
-      textField("f_contact","Contact name")+ selectField("f_role","Role",["Pediatric OT","Pediatric PT","Pediatrician","Developmental Specialist","Parent","Other"])+ dateField("f_date","Date")+
-      selectField("f_wouldpay","Would consider private pay?",["Yes","No","Maybe"])+ selectField("f_referral","Referral potential",["Yes","No","Maybe"])+ textField("f_notes","Key takeaways")+
-    '</div>'+addBtn("demand","Add conversation");
+      textField(idPrefix+"contact","Contact name",v.contact)+ selectField(idPrefix+"role","Role",["Pediatric OT","Pediatric PT","Pediatrician","Developmental Specialist","Parent","Other"],v.role)+ dateField(idPrefix+"date","Date",v.date)+
+      selectField(idPrefix+"wouldpay","Would consider private pay?",["Yes","No","Maybe"],v.wouldpay)+ selectField(idPrefix+"referral","Referral potential",["Yes","No","Maybe"],v.referral)+ textField(idPrefix+"notes","Key takeaways",v.notes)+
+    '</div>';
   }
   return '<div class="grid-3">'+
-    textField("f_name","Name")+ selectField("f_type","Type",["Pediatric OT","Pediatric PT","SLP","Pediatrician","Developmental Specialist","Swim School","Parent-Community Org","Other"])+ textField("f_contactinfo","Contact info")+
-    selectField("f_outreach","Outreach status",["Not contacted","Introduced","Ongoing relationship"])+ textField("f_notes","Notes")+
-  '</div>'+addBtn("referrals","Add contact");
+    textField(idPrefix+"name","Name",v.name)+ selectField(idPrefix+"type","Type",["Pediatric OT","Pediatric PT","SLP","Pediatrician","Developmental Specialist","Swim School","Parent-Community Org","Other"],v.type)+ textField(idPrefix+"contactinfo","Contact info",v.contactinfo)+
+    selectField(idPrefix+"outreach","Outreach status",["Not contacted","Introduced","Ongoing relationship"],v.outreach)+ textField(idPrefix+"notes","Notes",v.notes)+
+  '</div>';
 }
-function textField(id,label){ return '<div><label class="field-label">'+esc(label)+'</label><input class="field editable" id="'+id+'"></div>'; }
-function numField(id,label){ return '<div><label class="field-label">'+esc(label)+'</label><input class="field editable" type="number" id="'+id+'"></div>'; }
-function dateField(id,label){ return '<div><label class="field-label">'+esc(label)+'</label><input class="field editable" type="date" id="'+id+'"></div>'; }
-function selectField(id,label,opts){
+function logFormHtml(kind){
+  var label = kind==="pool"?"Add facility":kind==="demand"?"Add conversation":"Add contact";
+  return fieldsFor(kind,"f_",{}) + addBtn(kind,label);
+}
+function textField(id,label,val){ return '<div><label class="field-label">'+esc(label)+'</label><input class="field editable" id="'+id+'" value="'+esc(val||"")+'"></div>'; }
+function numField(id,label,val){ return '<div><label class="field-label">'+esc(label)+'</label><input class="field editable" type="number" id="'+id+'" value="'+(val==null||val===""?"":val)+'"></div>'; }
+function dateField(id,label,val){ return '<div><label class="field-label">'+esc(label)+'</label><input class="field editable" type="date" id="'+id+'" value="'+esc(val||"")+'"></div>'; }
+function selectField(id,label,opts,val){
   return '<div><label class="field-label">'+esc(label)+'</label><select class="field editable" id="'+id+'">'+
-    '<option value=""></option>'+opts.map(function(o){return '<option value="'+esc(o)+'">'+esc(o)+'</option>';}).join("")+'</select></div>';
+    '<option value=""></option>'+opts.map(function(o){return '<option value="'+esc(o)+'"'+(o===val?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>';
 }
 function addBtn(kind,label){
   return '<div style="margin-top:14px"><button class="btn primary" data-action="addEntry" data-kind="'+kind+'">'+esc(label)+'</button></div>';
 }
 function pillTag(text){ return '<span class="pill notstarted">'+text+'</span>'; }
 function entryFooter(e){
-  if(!e.createdBy) return "";
-  return '<div class="notes-byline" style="margin-top:8px">Added by '+esc(e.createdBy)+(e.createdAt?" · "+timeAgo(e.createdAt):"")+'</div>';
+  var lines = [];
+  if(e.createdBy) lines.push("Added by "+esc(e.createdBy)+(e.createdAt?" · "+timeAgo(e.createdAt):""));
+  if(e.editedBy) lines.push("edited by "+esc(e.editedBy)+(e.editedAt?" · "+timeAgo(e.editedAt):""));
+  if(!lines.length) return "";
+  return '<div class="notes-byline" style="margin-top:8px">'+lines.join(" · ")+'</div>';
+}
+var editingEntry = null; // {kind, id} of the entry currently being edited, or null
+function entryEditFormHtml(kind, e){
+  return '<div class="log-entry" style="border-color:var(--accent);border-width:1.5px">'+
+    fieldsFor(kind, "e_"+e.id+"_", e)+
+    '<div class="wrap-gap" style="margin-top:12px">'+
+      '<button class="btn primary small" data-action="saveEditEntry" data-kind="'+kind+'" data-id="'+e.id+'">Save</button>'+
+      '<button class="btn small ghost" data-action="cancelEditEntry">Cancel</button>'+
+    '</div>'+
+  '</div>';
+}
+function editButtonsHtml(kind, id){
+  return '<div class="wrap-gap" style="flex:none">'+
+    '<button class="btn small ghost" data-action="editEntry" data-kind="'+kind+'" data-id="'+id+'">Edit</button>'+
+    '<button class="btn small danger ghost" data-action="deleteEntry" data-kind="'+kind+'" data-id="'+id+'">Remove</button>'+
+  '</div>';
 }
 function poolEntryHtml(e){
+  if(editingEntry && editingEntry.kind==="pool" && editingEntry.id===e.id) return entryEditFormHtml("pool", e);
   return '<div class="log-entry">'+
-    '<div class="log-entry-head"><b>'+esc(e.facility||"Untitled facility")+'</b>'+
-      '<button class="btn small danger ghost" data-action="deleteEntry" data-kind="pool" data-id="'+e.id+'">Remove</button></div>'+
+    '<div class="log-entry-head"><b>'+esc(e.facility||"Untitled facility")+'</b>'+editButtonsHtml("pool",e.id)+'</div>'+
     '<div class="helptext" style="margin-top:4px">'+esc(e.city||"—")+' · '+money(e.rate||0)+'/hr · Fridays: '+esc(e.friday||"—")+'</div>'+
     '<div class="wrap-gap" style="margin-top:8px">'+
       pillTag("Therapist OK: "+esc(e.therapistok||"—"))+ pillTag("Lifeguard: "+esc(e.lifeguard||"—"))+ pillTag("Water: "+esc(e.watertemp||"—"))+
@@ -980,18 +1008,18 @@ function poolEntryHtml(e){
   '</div>';
 }
 function demandEntryHtml(e){
+  if(editingEntry && editingEntry.kind==="demand" && editingEntry.id===e.id) return entryEditFormHtml("demand", e);
   return '<div class="log-entry">'+
-    '<div class="log-entry-head"><b>'+esc(e.contact||"Untitled contact")+'</b>'+
-      '<button class="btn small danger ghost" data-action="deleteEntry" data-kind="demand" data-id="'+e.id+'">Remove</button></div>'+
+    '<div class="log-entry-head"><b>'+esc(e.contact||"Untitled contact")+'</b>'+editButtonsHtml("demand",e.id)+'</div>'+
     '<div class="helptext" style="margin-top:4px">'+esc(e.role||"—")+(e.date?" · "+esc(e.date):"")+'</div>'+
     '<div class="wrap-gap" style="margin-top:8px">'+pillTag("Would pay: "+esc(e.wouldpay||"—"))+ pillTag("Referral: "+esc(e.referral||"—"))+'</div>'+
     (e.notes?'<p style="margin:8px 0 0;font-size:13px">'+esc(e.notes)+'</p>':'')+ entryFooter(e)+
   '</div>';
 }
 function referralEntryHtml(e){
+  if(editingEntry && editingEntry.kind==="referrals" && editingEntry.id===e.id) return entryEditFormHtml("referrals", e);
   return '<div class="log-entry">'+
-    '<div class="log-entry-head"><b>'+esc(e.name||"Untitled contact")+'</b>'+
-      '<button class="btn small danger ghost" data-action="deleteEntry" data-kind="referrals" data-id="'+e.id+'">Remove</button></div>'+
+    '<div class="log-entry-head"><b>'+esc(e.name||"Untitled contact")+'</b>'+editButtonsHtml("referrals",e.id)+'</div>'+
     '<div class="helptext" style="margin-top:4px">'+esc(e.type||"—")+(e.contactinfo?" · "+esc(e.contactinfo):"")+'</div>'+
     '<div class="wrap-gap" style="margin-top:8px">'+pillTag(esc(e.outreach||"Not contacted"))+'</div>'+
     (e.notes?'<p style="margin:8px 0 0;font-size:13px">'+esc(e.notes)+'</p>':'')+ entryFooter(e)+
@@ -1223,20 +1251,49 @@ function viewExit(){
 /* ============================== VIEW: NOTES ============================== */
 
 function noteComposer(){
+  var placeholder = identity
+    ? "Write a note for "+(identity==="Judy"?"Emelia":"Judy")+"… (Enter to send, Shift+Enter for a new line)"
+    : "Set your name in the sidebar first…";
   return '<div style="margin-top:12px">'+
-    '<textarea class="field editable" id="noteComposer" data-action="noteComposer" placeholder="'+(identity?"Write a note for "+(identity==="Judy"?"Emelia":"Judy")+"…":"Set your name in the sidebar first…")+'" '+(identity?"":"disabled")+'></textarea>'+
+    '<textarea class="field editable" id="noteComposer" data-action="noteComposer" placeholder="'+placeholder+'" '+(identity?"":"disabled")+'></textarea>'+
     '<div style="margin-top:8px;text-align:right"><button class="btn primary small" data-action="sendNote" '+(identity?"":"disabled")+'>Send note</button></div>'+
   '</div>';
 }
+var editingNoteId = null;
 function noteCardHtml(n){
+  if(editingNoteId===n.id){
+    return '<div class="note-card" style="flex-direction:column;align-items:stretch">'+
+      '<div class="note-meta"><span class="author-badge" style="background:'+avatarColor(n.author)+'">'+esc(initials(n.author))+'</span><b style="color:var(--text)">'+esc(n.author||"Someone")+'</b></div>'+
+      '<textarea class="field editable" id="noteEdit_'+n.id+'" data-action="noteEdit" style="margin-top:8px">'+esc(n.text)+'</textarea>'+
+      '<div class="wrap-gap" style="justify-content:flex-end;margin-top:8px">'+
+        '<button class="btn small ghost" data-action="cancelEditNote">Cancel</button>'+
+        '<button class="btn primary small" data-action="saveEditNote" data-id="'+n.id+'">Save</button>'+
+      '</div>'+
+    '</div>';
+  }
   return '<div class="note-card">'+
     '<span class="author-badge" style="background:'+avatarColor(n.author)+'">'+esc(initials(n.author))+'</span>'+
     '<div style="flex:1;min-width:0">'+
-      '<div class="note-meta"><b style="color:var(--text)">'+esc(n.author||"Someone")+'</b><span>·</span><span>'+timeAgo(n.createdAt)+'</span></div>'+
+      '<div class="note-meta"><b style="color:var(--text)">'+esc(n.author||"Someone")+'</b><span>·</span><span>'+timeAgo(n.createdAt)+(n.editedAt?" (edited)":"")+'</span></div>'+
       '<p>'+esc(n.text)+'</p>'+
     '</div>'+
-    '<button class="note-remove" data-action="deleteEntry" data-kind="notes" data-id="'+n.id+'" title="Delete this note" aria-label="Delete this note">×</button>'+
+    '<div class="wrap-gap" style="flex:none">'+
+      '<button class="btn small ghost" data-action="editNote" data-id="'+n.id+'" title="Edit this note">Edit</button>'+
+      '<button class="note-remove" data-action="deleteEntry" data-kind="notes" data-id="'+n.id+'" title="Delete this note" aria-label="Delete this note">×</button>'+
+    '</div>'+
   '</div>';
+}
+function saveEditedNote(id){
+  var el = document.getElementById("noteEdit_"+id);
+  var text = el ? el.value.trim() : "";
+  if(text){
+    mutateSection("notes", function(fresh){
+      var map = Object.assign({}, fresh||{});
+      if(map[id]) map[id] = Object.assign({}, map[id], {text:text, editedAt:new Date().toISOString()});
+      return map;
+    });
+  }
+  editingNoteId = null;
 }
 function viewNotes(){
   return '' +
@@ -1354,6 +1411,8 @@ content.addEventListener("click", function(e){
   }
   if((t = e.target.closest('[data-action="deleteEntry"]'))){
     var kind = t.getAttribute("data-kind"), id = t.getAttribute("data-id");
+    if(editingEntry && editingEntry.kind===kind && editingEntry.id===id) editingEntry = null;
+    if(kind==="notes" && editingNoteId===id) editingNoteId = null;
     mutateSection(kind, function(fresh){
       var map = Object.assign({}, fresh||{});
       delete map[id];
@@ -1361,8 +1420,36 @@ content.addEventListener("click", function(e){
     });
     return;
   }
+  if((t = e.target.closest('[data-action="editEntry"]'))){
+    editingEntry = {kind:t.getAttribute("data-kind"), id:t.getAttribute("data-id")};
+    renderView();
+    return;
+  }
+  if((t = e.target.closest('[data-action="cancelEditEntry"]'))){
+    editingEntry = null;
+    renderView();
+    return;
+  }
+  if((t = e.target.closest('[data-action="saveEditEntry"]'))){
+    handleSaveEditEntry(t.getAttribute("data-kind"), t.getAttribute("data-id"));
+    return;
+  }
   if((t = e.target.closest('[data-action="sendNote"]'))){
     handleSendNote();
+    return;
+  }
+  if((t = e.target.closest('[data-action="editNote"]'))){
+    editingNoteId = t.getAttribute("data-id");
+    renderView();
+    return;
+  }
+  if((t = e.target.closest('[data-action="cancelEditNote"]'))){
+    editingNoteId = null;
+    renderView();
+    return;
+  }
+  if((t = e.target.closest('[data-action="saveEditNote"]'))){
+    saveEditedNote(t.getAttribute("data-id"));
     return;
   }
 });
@@ -1429,25 +1516,33 @@ content.addEventListener("focusout", function(e){
   if(isGuardedField(e.target)) typingGuard = false;
 }, true);
 
-var debouncedWeekNotes = debounce(function(n, text){
+// Named save functions (used both debounced-on-input and immediately on
+// Enter) for the app's long-form note fields. Enter does NOT prevent the
+// default newline here — these fields hold real multi-paragraph notes
+// (a "submit" just means "save right now," not "close this field").
+function saveWeekNotes(n, text){
   mutateSection("weeks", function(fresh){
     var weeks = Object.assign({}, fresh||{});
     var eff = weeks[n] || weekDefaults(WEEKS[n-1]);
     weeks[n] = Object.assign({}, eff, {notes:text, notesBy:identity||"Someone", notesAt:new Date().toISOString()});
     return weeks;
   });
-}, 700);
-var debouncedBrainstorm = debounce(function(text){
+}
+function saveBrainstorm(text){
   mutateSection("brainstorm", function(){ return {text:text}; });
-}, 700);
-var debouncedGrowthNotes = debounce(function(text){
+}
+function saveGrowthNotes(text){
   mutateSection("growth", function(fresh){ return Object.assign({stage:1}, fresh||{}, {notes:text}); });
-}, 700);
-var debouncedGutNotes = debounce(function(text){
+}
+function saveGutNotes(text){
   mutateSection("exitThreshold", function(fresh){
     return Object.assign({checks:EXIT_ITEMS.map(function(){return false;}), gut:null}, fresh||{}, {gutNotes:text});
   });
-}, 700);
+}
+var debouncedWeekNotes = debounce(saveWeekNotes, 700);
+var debouncedBrainstorm = debounce(saveBrainstorm, 700);
+var debouncedGrowthNotes = debounce(saveGrowthNotes, 700);
+var debouncedGutNotes = debounce(saveGutNotes, 700);
 
 content.addEventListener("input", function(e){
   var t = e.target;
@@ -1457,20 +1552,45 @@ content.addEventListener("input", function(e){
   else if(t.matches('[data-action="gutNotes"]')) debouncedGutNotes(t.value);
 });
 
-function handleAddEntry(kind){
-  function val(id){ var el=document.getElementById(id); return el?el.value:""; }
-  var payload;
-  if(kind==="pool"){
-    payload = {facility:val("f_facility"), city:val("f_city"), rate:parseFloat(val("f_rate"))||0,
-      friday:val("f_friday"), watertemp:val("f_watertemp"), therapistok:val("f_therapistok"),
-      lifeguard:val("f_lifeguard"), datecontacted:val("f_datecontacted"), notes:val("f_notes")};
-  } else if(kind==="demand"){
-    payload = {contact:val("f_contact"), role:val("f_role"), date:val("f_date"),
-      wouldpay:val("f_wouldpay"), referral:val("f_referral"), notes:val("f_notes")};
-  } else {
-    payload = {name:val("f_name"), type:val("f_type"), contactinfo:val("f_contactinfo"),
-      outreach:val("f_outreach")||"Not contacted", notes:val("f_notes")};
+content.addEventListener("keydown", function(e){
+  var t = e.target;
+  if(t.matches('[data-action="noteComposer"]') && e.key==="Enter" && !e.shiftKey){
+    e.preventDefault();
+    handleSendNote();
+    return;
   }
+  if(t.matches('[data-action="noteEdit"]') && e.key==="Enter" && !e.shiftKey){
+    e.preventDefault();
+    saveEditedNote(t.getAttribute("data-id"));
+    return;
+  }
+  // Long-form note fields: Enter submits (saves immediately) without
+  // blocking the newline it also inserts — so a multi-line note in
+  // progress keeps saving as you go instead of waiting on the debounce.
+  if(e.key==="Enter" && !e.shiftKey){
+    if(t.matches('[data-action="weekNotes"]')) saveWeekNotes(parseInt(t.getAttribute("data-week"),10), t.value);
+    else if(t.matches('[data-action="brainstorm"]')) saveBrainstorm(t.value);
+    else if(t.matches('[data-action="growthNotes"]')) saveGrowthNotes(t.value);
+    else if(t.matches('[data-action="gutNotes"]')) saveGutNotes(t.value);
+  }
+});
+
+function payloadFor(kind, idPrefix){
+  function val(suffix){ var el=document.getElementById(idPrefix+suffix); return el?el.value:""; }
+  if(kind==="pool"){
+    return {facility:val("facility"), city:val("city"), rate:parseFloat(val("rate"))||0,
+      friday:val("friday"), watertemp:val("watertemp"), therapistok:val("therapistok"),
+      lifeguard:val("lifeguard"), datecontacted:val("datecontacted"), notes:val("notes")};
+  }
+  if(kind==="demand"){
+    return {contact:val("contact"), role:val("role"), date:val("date"),
+      wouldpay:val("wouldpay"), referral:val("referral"), notes:val("notes")};
+  }
+  return {name:val("name"), type:val("type"), contactinfo:val("contactinfo"),
+    outreach:val("outreach")||"Not contacted", notes:val("notes")};
+}
+function handleAddEntry(kind){
+  var payload = payloadFor(kind, "f_");
   var hasContent = Object.keys(payload).some(function(k){ return payload[k] && payload[k]!=="" && k!=="notes"; });
   if(!hasContent) return;
   payload.createdBy = identity || "Someone";
@@ -1481,6 +1601,18 @@ function handleAddEntry(kind){
     map[id] = payload;
     return map;
   });
+}
+function handleSaveEditEntry(kind, id){
+  var payload = payloadFor(kind, "e_"+id+"_");
+  payload.editedBy = identity || "Someone";
+  payload.editedAt = new Date().toISOString();
+  mutateSection(kind, function(fresh){
+    var map = Object.assign({}, fresh||{});
+    var existing = map[id] || {};
+    map[id] = Object.assign({}, existing, payload);
+    return map;
+  });
+  editingEntry = null;
 }
 function handleSendNote(){
   var el = document.getElementById("noteComposer");
