@@ -211,6 +211,11 @@
   .task-item.done label{color:var(--text-faint);text-decoration:line-through}
   .week-notes{margin-top:16px}
   .notes-byline{font-size:11.5px;color:var(--text-faint);margin-top:5px}
+  .save-hint{
+    font-weight:600;color:var(--green);font-size:11px;margin-left:6px;opacity:0;
+    transition:opacity .2s ease;
+  }
+  .save-hint.show{opacity:1}
 
   .log-entry{border:1px solid var(--border-soft);border-radius:var(--radius-m);padding:14px 16px;background:var(--surface)}
   .log-entry-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
@@ -478,6 +483,17 @@ function money(n,cents){
 }
 function num(n,d){ n=Number(n)||0; return n.toLocaleString("en-US",{maximumFractionDigits:d||0}); }
 function debounce(fn,ms){ var t; return function(){ var a=arguments,ctx=this; clearTimeout(t); t=setTimeout(function(){fn.apply(ctx,a);},ms); }; }
+// Direct DOM update (deliberately NOT a renderView() call) so pressing Enter
+// shows an immediate "Saved" confirmation even while typingGuard is
+// blocking full re-renders to protect the field you're still focused in.
+function flashSavedHint(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = "Saved ✓";
+  el.classList.add("show");
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(function(){ el.classList.remove("show"); }, 1400);
+}
 function timeAgo(iso){
   if(!iso) return "";
   var d = new Date(iso), diff = (Date.now()-d.getTime())/1000;
@@ -914,8 +930,8 @@ function viewRoadmap(){
           '</select>'+
         '</div>'+
         '<div class="week-notes">'+
-          '<label class="field-label">Notes for this week</label>'+
-          '<textarea class="field editable" data-action="weekNotes" data-week="'+w.n+'" placeholder="After talking with Heidi, learned…">'+esc(eff.notes)+'</textarea>'+
+          '<label class="field-label">Notes for this week <span class="save-hint" id="saveHint_week_'+w.n+'"></span></label>'+
+          '<textarea class="field editable" data-action="weekNotes" data-week="'+w.n+'" placeholder="After talking with Heidi, learned… (Enter saves right away)">'+esc(eff.notes)+'</textarea>'+
           (eff.notesBy ? '<div class="notes-byline">Last edited by '+esc(eff.notesBy)+(eff.notesAt?" · "+timeAgo(eff.notesAt):"")+'</div>' : '')+
         '</div>'+
       '</div>'+
@@ -930,9 +946,9 @@ function viewRoadmap(){
   '</div>'+
   '<div class="stack" style="gap:12px">'+cards+'</div>'+
   '<div class="card" style="margin-top:20px">'+
-    '<h3 class="section-title">Catch-all brainstorming space</h3>'+
+    '<div class="flex-between"><h3 class="section-title">Catch-all brainstorming space</h3><span class="save-hint" id="saveHint_brainstorm"></span></div>'+
     '<p class="helptext" style="margin:4px 0 12px">Not tied to a specific week — feature ideas, business-potential thoughts, anything worth remembering.</p>'+
-    '<textarea class="field editable" data-action="brainstorm" style="min-height:110px" placeholder="Random ideas, things to look into later…">'+esc(state.brainstorm?state.brainstorm.text:"")+'</textarea>'+
+    '<textarea class="field editable" data-action="brainstorm" style="min-height:110px" placeholder="Random ideas, things to look into later… (Enter saves right away)">'+esc(state.brainstorm?state.brainstorm.text:"")+'</textarea>'+
   '</div>';
 }
 
@@ -1210,8 +1226,8 @@ function viewStages(){
   '</div>'+
   '<div class="card">'+rows+'</div>'+
   '<div class="card" style="margin-top:16px">'+
-    '<label class="field-label">Notes on the current stage</label>'+
-    '<textarea class="field editable" data-action="growthNotes" placeholder="Why we are here, what would move us up…">'+esc(state.growth?state.growth.notes:"")+'</textarea>'+
+    '<label class="field-label">Notes on the current stage <span class="save-hint" id="saveHint_growth"></span></label>'+
+    '<textarea class="field editable" data-action="growthNotes" placeholder="Why we are here, what would move us up… (Enter saves right away)">'+esc(state.growth?state.growth.notes:"")+'</textarea>'+
   '</div>';
 }
 
@@ -1238,13 +1254,13 @@ function viewExit(){
     '<div style="margin-top:10px">'+items+'</div>'+
   '</div>'+
   '<div class="card" style="margin-top:16px">'+
-    '<h3 class="section-title">The gut check</h3>'+
+    '<div class="flex-between"><h3 class="section-title">The gut check</h3><span class="save-hint" id="saveHint_gut"></span></div>'+
     '<p class="helptext" style="margin:4px 0 12px">'+esc(GUT_CHECK_Q)+'</p>'+
     '<div class="segmented">'+
       '<button data-action="gutCheck" data-val="yes" class="'+(et.gut==="yes"?"active":"")+'">Yes</button>'+
       '<button data-action="gutCheck" data-val="no" class="'+(et.gut==="no"?"active":"")+'">No</button>'+
     '</div>'+
-    '<textarea class="field editable" style="margin-top:12px" data-action="gutNotes" placeholder="Why…">'+esc(et.gutNotes)+'</textarea>'+
+    '<textarea class="field editable" style="margin-top:12px" data-action="gutNotes" placeholder="Why… (Enter saves right away)">'+esc(et.gutNotes)+'</textarea>'+
   '</div>';
 }
 
@@ -1567,11 +1583,23 @@ content.addEventListener("keydown", function(e){
   // Long-form note fields: Enter submits (saves immediately) without
   // blocking the newline it also inserts — so a multi-line note in
   // progress keeps saving as you go instead of waiting on the debounce.
+  // The save is deferred one tick so it captures the newline this same
+  // keypress is about to insert, and a visible "Saved" hint confirms it —
+  // otherwise Enter looks like it does nothing at all.
   if(e.key==="Enter" && !e.shiftKey){
-    if(t.matches('[data-action="weekNotes"]')) saveWeekNotes(parseInt(t.getAttribute("data-week"),10), t.value);
-    else if(t.matches('[data-action="brainstorm"]')) saveBrainstorm(t.value);
-    else if(t.matches('[data-action="growthNotes"]')) saveGrowthNotes(t.value);
-    else if(t.matches('[data-action="gutNotes"]')) saveGutNotes(t.value);
+    if(t.matches('[data-action="weekNotes"]')){
+      var wkN = parseInt(t.getAttribute("data-week"),10), wkField = t;
+      setTimeout(function(){ saveWeekNotes(wkN, wkField.value); flashSavedHint("saveHint_week_"+wkN); }, 0);
+    } else if(t.matches('[data-action="brainstorm"]')){
+      var bsField = t;
+      setTimeout(function(){ saveBrainstorm(bsField.value); flashSavedHint("saveHint_brainstorm"); }, 0);
+    } else if(t.matches('[data-action="growthNotes"]')){
+      var gnField = t;
+      setTimeout(function(){ saveGrowthNotes(gnField.value); flashSavedHint("saveHint_growth"); }, 0);
+    } else if(t.matches('[data-action="gutNotes"]')){
+      var gtField = t;
+      setTimeout(function(){ saveGutNotes(gtField.value); flashSavedHint("saveHint_gut"); }, 0);
+    }
   }
 });
 
