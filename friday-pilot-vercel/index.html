@@ -1672,12 +1672,23 @@ async function init(){
   route = (location.hash||"#overview").replace("#","");
   if(!VIEWS[route]) route = "overview";
   try{
-    await apiGetAll();
+    var s = await apiGetAll();
+    // Apply the real data right away — startApp()'s first render must not
+    // show empty seed defaults for however long it takes the next 5s poll
+    // to land (that stale window is exactly what makes a real note look
+    // like it's "gone" if you touch the page in the first moment).
+    serverConfigured = true;
+    SECTIONS.forEach(function(name){ applySection(name, s[name]); });
+    setSyncState("ok");
     showGate(false);
     startApp();
   }catch(err){
     if(err && err.authRequired){ showGate(true); return; }
-    // not_configured, or a transient error — still show the app (local fallback / retry loop)
+    if(err && err.notConfigured){
+      serverConfigured = false;
+      SECTIONS.forEach(function(name){ applySection(name, localGet(name)); });
+      setSyncState("local");
+    }
     showGate(false);
     startApp();
   }
