@@ -265,7 +265,10 @@
   .prose p{margin:0 0 10px}
   .prose ul,.prose ol{margin:0 0 12px;padding-left:21px}
   .prose li{margin-bottom:5px}
-  .prose .fill{background:var(--input-bg);border:1px solid var(--input-border);border-radius:4px;padding:0 5px;font-family:var(--font-mono);font-size:12px;white-space:nowrap}
+  .prose .fill{background:var(--input-bg);border:1px solid var(--input-border);border-radius:4px;padding:0 5px;font-family:var(--font-mono);font-size:12px;cursor:text;display:inline-block;min-width:10px}
+  .prose .fill:empty:before{content:attr(data-placeholder);color:var(--text-faint)}
+  .prose .fill:focus{outline:2px solid var(--accent);outline-offset:1px;background:var(--surface)}
+  .prose .blank-line{display:inline-block;border-bottom:1px solid var(--text-faint);vertical-align:baseline}
   .doc-sig{border-top:1px dashed var(--border);margin-top:16px;padding-top:14px;font-size:13px;color:var(--text-muted)}
   .doc-title{font-family:var(--font-display);font-weight:600;font-size:16.5px;color:var(--text);margin-bottom:2px}
   .doc-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700;margin-bottom:6px}
@@ -607,7 +610,7 @@ function applySection(name, raw){
   } else if(name==="brainstorm"){
     state.brainstorm = Object.assign({text:""}, raw||{});
   } else if(name==="legal"){
-    state.legal = Object.assign({checks:{}}, raw||{});
+    state.legal = Object.assign({checks:{}, fields:{}}, raw||{});
   }
 }
 function toMap(arr){
@@ -1383,11 +1386,42 @@ function entitySectionHtml(){
   );
 }
 
+/* Editable, synced fill-in-the-blank fields shared across all four documents
+   below — type "Practice Name" once in any document and every occurrence
+   everywhere updates, since they all read from the same state.legal.fields
+   map. Pure blank lines meant to be filled by hand per family (child's name,
+   DOB, signatures) are NOT part of this — they stay plain underscores. */
+var LEGAL_FIELD_PLACEHOLDERS = {
+  practiceName: "Practice Name",
+  facilityName: "Facility Name",
+  goalsBlurb: "motor planning, strength, sensory regulation, functional skills",
+  lifeguardPolicy: 'e.g. "a lifeguard is on deck at all times" or "no lifeguard is on duty during our rented hour"',
+  lifeguardCred: "confirm: is the therapist also a certified lifeguard / water safety instructor?",
+  intakeReturnMethod: "email / portal",
+  noticeHours: "24 / 48",
+  lateFee: "full session rate",
+  repeatWindow: "3-month",
+  cancelContactMethod: "contact method",
+  sessionLength: "45 / 60",
+  arrivalWindow: "10–15",
+  paymentMethods: "cash / card / Venmo / etc.",
+  sessionRateAmt: "___",
+  evalRateAmt: "___",
+  commMethod: "email / text",
+  responseTime: "1–2 business days"
+};
+function fillField(key){
+  var val = (state.legal && state.legal.fields && state.legal.fields[key]) || "";
+  var ph = LEGAL_FIELD_PLACEHOLDERS[key] || key;
+  return '<span class="fill" contenteditable="true" spellcheck="false" data-action="legalField" data-field="'+key+'" data-placeholder="'+esc(ph)+'">'+esc(val)+'</span>';
+}
+function blank(width){ return '<span class="blank-line" style="min-width:'+(width||90)+'px"></span>'; }
+
 function intakeFormHtml(){
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
-    '<div class="doc-title">'+'<span class="fill">[Practice Name]</span> — New Client Intake Form</div>'+
-    '<p class="helptext" style="margin-bottom:14px">Please complete before your child\'s first session, and return by <span class="fill">[email / portal]</span> or bring it to the first Friday session.</p>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — New Client Intake Form</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Please complete before your child\'s first session, and return by '+fillField("intakeReturnMethod")+' or bring it to the first Friday session.</p>'+
     '<h5>Child Information</h5>'+
     '<ul><li>Child\'s full legal name</li><li>Date of birth</li><li>Age</li><li>Home address</li><li>Primary language spoken at home</li></ul>'+
     '<h5>Parent / Guardian Information</h5>'+
@@ -1399,7 +1433,7 @@ function intakeFormHtml(){
     '</ul>'+
     '<h5>Referral &amp; Reason for Seeking Services</h5>'+
     '<ul>'+
-      '<li>How did you hear about <span class="fill">[Practice Name]</span>? (referring provider, pediatrician, school, word of mouth, other)</li>'+
+      '<li>How did you hear about '+fillField("practiceName")+'? (referring provider, pediatrician, school, word of mouth, other)</li>'+
       '<li>Referring provider name &amp; contact, if applicable</li>'+
       '<li>Primary concerns / reason for seeking OT, in your own words</li>'+
       '<li>Current diagnoses, if any</li>'+
@@ -1430,21 +1464,21 @@ function intakeFormHtml(){
     '<ul>'+
       '<li>Preferred day/time — Fridays; please list any constraints</li>'+
       '<li>Preferred contact method for scheduling — text / email / call</li>'+
-      '<li>☐ I understand <span class="fill">[Practice Name]</span> is private-pay only and does not bill insurance directly. A superbill is available on request for possible out-of-network reimbursement, submitted at the family\'s own discretion.</li>'+
+      '<li>☐ I understand '+fillField("practiceName")+' is private-pay only and does not bill insurance directly. A superbill is available on request for possible out-of-network reimbursement, submitted at the family\'s own discretion.</li>'+
     '</ul>'+
     '<h5>Consent to Contact Others (Release of Information) — optional</h5>'+
-    '<p>I authorize <span class="fill">[Practice Name]</span> to communicate with the following individuals/providers regarding my child\'s care: <span class="fill">[names / roles]</span>. This may be revoked in writing at any time.</p>'+
-    '<div class="doc-sig">Parent/Guardian signature: <span class="fill">[_______________________]</span> &nbsp; Printed name: <span class="fill">[_______________________]</span><br>Relationship to child: <span class="fill">[_______]</span> &nbsp; Date: <span class="fill">[____/____/____]</span></div>'+
+    '<p>I authorize '+fillField("practiceName")+' to communicate with the following individuals/providers regarding my child\'s care: '+blank(160)+'. This may be revoked in writing at any time.</p>'+
+    '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Relationship to child: '+blank(90)+' &nbsp; Date: '+blank(90)+'</div>'+
   '</div>';
 }
 
 function consentFormHtml(){
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
-    '<div class="doc-title"><span class="fill">[Practice Name]</span> — Consent for Aquatic Occupational Therapy Treatment</div>'+
-    '<p class="helptext" style="margin-bottom:14px">Child\'s name: <span class="fill">[_____________]</span> &nbsp; Date of birth: <span class="fill">[__/__/____]</span></p>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Consent for Aquatic Occupational Therapy Treatment</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Child\'s name: '+blank(140)+' &nbsp; Date of birth: '+blank(90)+'</p>'+
     '<h5>What Aquatic OT Involves</h5>'+
-    '<p>Aquatic occupational therapy uses the properties of water — buoyancy, resistance, warmth, and sensory input — to work on <span class="fill">[goals: motor planning, strength, sensory regulation, functional skills]</span>. Sessions take place in a pool at <span class="fill">[Facility Name]</span>, a facility <span class="fill">[Practice Name]</span> rents by the hour; the pool itself is not owned or operated by <span class="fill">[Practice Name]</span>.</p>'+
+    '<p>Aquatic occupational therapy uses the properties of water — buoyancy, resistance, warmth, and sensory input — to work on '+fillField("goalsBlurb")+'. Sessions take place in a pool at '+fillField("facilityName")+', a facility '+fillField("practiceName")+' rents by the hour; the pool itself is not owned or operated by '+fillField("practiceName")+'.</p>'+
     '<h5>Risks of Aquatic Therapy — please read carefully</h5>'+
     '<p>As with any treatment involving water, there are risks in addition to the general risks of occupational therapy. These include, but are not limited to:</p>'+
     '<ul>'+
@@ -1457,35 +1491,35 @@ function consentFormHtml(){
     '</ul>'+
     '<h5>Pool Environment &amp; Supervision</h5>'+
     '<ul>'+
-      '<li>Sessions occur at <span class="fill">[Facility Name]</span>. Lifeguard coverage follows that facility\'s own policy — <span class="fill">[state the facility\'s specific policy once confirmed, e.g. "a lifeguard is on deck at all times" or "no lifeguard is on duty during our rented hour"]</span>.</li>'+
-      '<li>Your child\'s OT provides continuous 1:1 clinical supervision throughout the session. <span class="fill">[Confirm and insert: is the therapist also a certified lifeguard / water safety instructor? Adjust this line to match the actual credential before using this form.]</span> Clinical supervision by an OT is not a substitute for lifeguard supervision where the facility requires one.</li>'+
+      '<li>Sessions occur at '+fillField("facilityName")+'. Lifeguard coverage follows that facility\'s own policy — '+fillField("lifeguardPolicy")+'.</li>'+
+      '<li>Your child\'s OT provides continuous 1:1 clinical supervision throughout the session. '+fillField("lifeguardCred")+' Clinical supervision by an OT is not a substitute for lifeguard supervision where the facility requires one.</li>'+
       '<li>A parent or guardian must remain on-site (on the pool deck or immediate facility) for the full duration of every session, and is responsible for the child\'s supervision and safety during arrival, departure, and any time the child is not in direct session with the therapist.</li>'+
       '<li>For some children or goals, the parent/guardian may be asked to enter the water as part of a treatment strategy — this will always be discussed and agreed to in advance, never sprung on you mid-session.</li>'+
     '</ul>'+
     '<h5>Consent to Treatment</h5>'+
     '<ul>'+
       '<li>I understand aquatic OT involves physical contact, handling, and positioning of my child in and around water as part of treatment.</li>'+
-      '<li>I understand <span class="fill">[Practice Name]</span> is a private-pay practice and does not bill insurance; I am responsible for payment per the Service Agreement.</li>'+
+      '<li>I understand '+fillField("practiceName")+' is a private-pay practice and does not bill insurance; I am responsible for payment per the Service Agreement.</li>'+
       '<li>I understand I may stop treatment or withdraw this consent at any time, for any reason, without it affecting future care.</li>'+
       '<li>I understand no specific outcome or result is guaranteed.</li>'+
       '<li>I consent to the use of photos/video for clinical documentation purposes only; separate written consent will be requested before any image of my child is used for marketing.</li>'+
     '</ul>'+
-    '<div class="doc-sig">Parent/Guardian signature: <span class="fill">[_______________________]</span> &nbsp; Printed name: <span class="fill">[_______________________]</span><br>Relationship to child: <span class="fill">[_______]</span> &nbsp; Date: <span class="fill">[____/____/____]</span></div>'+
+    '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Relationship to child: '+blank(90)+' &nbsp; Date: '+blank(90)+'</div>'+
   '</div>';
 }
 
 function cancellationPolicyHtml(){
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
-    '<div class="doc-title"><span class="fill">[Practice Name]</span> — Cancellation &amp; No-Show Policy</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Cancellation &amp; No-Show Policy</div>'+
     '<ul>'+
-      '<li>We ask for at least <span class="fill">[24 / 48]</span> hours\' notice to cancel or reschedule a session.</li>'+
+      '<li>We ask for at least '+fillField("noticeHours")+' hours\' notice to cancel or reschedule a session.</li>'+
       '<li><b>Why this matters:</b> pool time is rented by the hour whether or not a session happens, so a late cancellation or no-show is a real cost to the practice, not just an inconvenience.</li>'+
-      '<li>A late cancellation (less than <span class="fill">[24 / 48]</span> hours\' notice) or a no-show is billed at <span class="fill">[$__ / full session rate]</span>, due before the next scheduled session.</li>'+
-      '<li>If <span class="fill">[Practice Name]</span> needs to cancel or reschedule (illness, pool closure, facility issue), there is no charge, and the session is rescheduled at the earliest available Friday.</li>'+
+      '<li>A late cancellation (less than '+fillField("noticeHours")+' hours\' notice) or a no-show is billed at '+fillField("lateFee")+', due before the next scheduled session.</li>'+
+      '<li>If '+fillField("practiceName")+' needs to cancel or reschedule (illness, pool closure, facility issue), there is no charge, and the session is rescheduled at the earliest available Friday.</li>'+
       '<li>Pool or facility closures beyond our control (weather, maintenance, holiday closure) are treated as a practice-initiated cancellation — no charge, rescheduled as soon as possible.</li>'+
-      '<li>Repeated late cancellations or no-shows (three or more within a rolling <span class="fill">[3-month]</span> period) may prompt a conversation about whether ongoing Friday scheduling is still a good fit, and in some cases, discharge from the active caseload.</li>'+
-      '<li>How to cancel: text/call/email <span class="fill">[contact method]</span> as early as possible — even outside the notice window, earlier notice always helps other families get the slot.</li>'+
+      '<li>Repeated late cancellations or no-shows (three or more within a rolling '+fillField("repeatWindow")+' period) may prompt a conversation about whether ongoing Friday scheduling is still a good fit, and in some cases, discharge from the active caseload.</li>'+
+      '<li>How to cancel: text/call/email '+fillField("cancelContactMethod")+' as early as possible — even outside the notice window, earlier notice always helps other families get the slot.</li>'+
       '<li>This policy is reviewed with every family at intake and is part of the Service Agreement below.</li>'+
     '</ul>'+
   '</div>';
@@ -1494,44 +1528,44 @@ function cancellationPolicyHtml(){
 function serviceAgreementHtml(){
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
-    '<div class="doc-title"><span class="fill">[Practice Name]</span> — Service Agreement &amp; Practice Policies</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Service Agreement &amp; Practice Policies</div>'+
     '<p class="helptext" style="margin-bottom:14px">Please read and sign before your child\'s first session.</p>'+
     '<h5>About This Practice</h5>'+
     '<ul>'+
-      '<li><span class="fill">[Practice Name]</span> is a private-pay pediatric occupational therapy practice providing aquatic-based OT for children ages 2–16, currently operating on Fridays at <span class="fill">[Facility Name]</span>.</li>'+
-      '<li><span class="fill">[Practice Name]</span> does not bill insurance directly. A superbill (an itemized receipt with diagnosis and procedure codes) is available on request, which you may submit to your insurance for possible out-of-network reimbursement — reimbursement is not guaranteed and is between you and your insurance company.</li>'+
+      '<li>'+fillField("practiceName")+' is a private-pay pediatric occupational therapy practice providing aquatic-based OT for children ages 2–16, currently operating on Fridays at '+fillField("facilityName")+'.</li>'+
+      '<li>'+fillField("practiceName")+' does not bill insurance directly. A superbill (an itemized receipt with diagnosis and procedure codes) is available on request, which you may submit to your insurance for possible out-of-network reimbursement — reimbursement is not guaranteed and is between you and your insurance company.</li>'+
     '</ul>'+
     '<h5>Sessions</h5>'+
     '<ul>'+
-      '<li>Standard session length: <span class="fill">[45 / 60]</span> minutes, including transition/dressing time in and out of the water.</li>'+
-      '<li>Please arrive <span class="fill">[10–15]</span> minutes before your scheduled time to change and be poolside ready to begin — session time cannot be extended if you arrive late.</li>'+
+      '<li>Standard session length: '+fillField("sessionLength")+' minutes, including transition/dressing time in and out of the water.</li>'+
+      '<li>Please arrive '+fillField("arrivalWindow")+' minutes before your scheduled time to change and be poolside ready to begin — session time cannot be extended if you arrive late.</li>'+
       '<li>What to bring: swimsuit, towel, goggles if your child uses them, a change of clothes, and any comfort items that help with transitions.</li>'+
       '<li>A parent or guardian must remain on-site for the entire session (see the Consent for Aquatic OT Treatment form).</li>'+
     '</ul>'+
     '<h5>Fees &amp; Payment</h5>'+
     '<ul>'+
-      '<li>Session rate: <span class="fill">$[___]</span>. Evaluation rate: <span class="fill">$[___]</span>.</li>'+
-      '<li>Payment is due at the time of service, by <span class="fill">[cash / card / Venmo / etc.]</span>.</li>'+
+      '<li>Session rate: $'+fillField("sessionRateAmt")+'. Evaluation rate: $'+fillField("evalRateAmt")+'.</li>'+
+      '<li>Payment is due at the time of service, by '+fillField("paymentMethods")+'.</li>'+
       '<li>Package pricing, if offered, is described separately at intake.</li>'+
       '<li>See the Cancellation &amp; No-Show Policy above for late-cancellation and no-show fees.</li>'+
     '</ul>'+
     '<h5>Communication</h5>'+
     '<ul>'+
-      '<li>Non-urgent questions: <span class="fill">[email / text]</span>, typical response within <span class="fill">[1–2 business days]</span>.</li>'+
+      '<li>Non-urgent questions: '+fillField("commMethod")+', typical response within '+fillField("responseTime")+'.</li>'+
       '<li>This is not an emergency service. For a medical emergency, call 911 or go to the nearest emergency room.</li>'+
     '</ul>'+
     '<h5>Documentation &amp; Records</h5>'+
     '<ul>'+
-      '<li><span class="fill">[Practice Name]</span> keeps clinical documentation (evaluations, session notes, progress notes) consistent with California OT licensure and recordkeeping requirements, and treats all records as confidential even though this is a private-pay, non-insurance practice.</li>'+
+      '<li>'+fillField("practiceName")+' keeps clinical documentation (evaluations, session notes, progress notes) consistent with California OT licensure and recordkeeping requirements, and treats all records as confidential even though this is a private-pay, non-insurance practice.</li>'+
       '<li>You may request a copy of your child\'s records at any time, in writing.</li>'+
     '</ul>'+
     '<h5>Scope &amp; Location</h5>'+
-    '<p>Sessions currently take place at <span class="fill">[Facility Name]</span> on Fridays. Location and availability are subject to change based on pool access, and families will be notified as early as possible of any change.</p>'+
+    '<p>Sessions currently take place at '+fillField("facilityName")+' on Fridays. Location and availability are subject to change based on pool access, and families will be notified as early as possible of any change.</p>'+
     '<h5>Ending Services</h5>'+
-    '<p>Either you or <span class="fill">[Practice Name]</span> may end services at any time, for any reason, with reasonable notice. <span class="fill">[Practice Name]</span> will provide a discharge summary and, where appropriate, referrals to continue care elsewhere.</p>'+
+    '<p>Either you or '+fillField("practiceName")+' may end services at any time, for any reason, with reasonable notice. '+fillField("practiceName")+' will provide a discharge summary and, where appropriate, referrals to continue care elsewhere.</p>'+
     '<h5>Agreement</h5>'+
     '<p>By signing below, I acknowledge that I have received, read, and agree to this Service Agreement, the Cancellation &amp; No-Show Policy, and the Consent for Aquatic OT Treatment.</p>'+
-    '<div class="doc-sig">Parent/Guardian signature: <span class="fill">[_______________________]</span> &nbsp; Printed name: <span class="fill">[_______________________]</span><br>Date: <span class="fill">[____/____/____]</span></div>'+
+    '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Date: '+blank(90)+'</div>'+
   '</div>';
 }
 
@@ -1867,12 +1901,21 @@ content.addEventListener("change", function(e){
 var NON_GUARDED_INPUT_TYPES = ["checkbox","radio","button","submit","reset"];
 function isGuardedField(el){
   if(!el) return false;
+  if(el.isContentEditable) return true;
   if(el.tagName==="TEXTAREA" || el.tagName==="SELECT") return true;
   if(el.tagName==="INPUT") return NON_GUARDED_INPUT_TYPES.indexOf(el.type)===-1;
   return false;
 }
 content.addEventListener("focusin", function(e){ if(isGuardedField(e.target)) typingGuard = true; });
 content.addEventListener("focusout", function(e){
+  // A fill-in field commits immediately on blur (no reason to wait out its
+  // debounce) rather than relying on the next poll, since — unlike the note
+  // fields below — there's no "Saved" hint to reassure you it landed.
+  if(e.target.matches && e.target.matches('[data-action="legalField"]')){
+    var fkey = e.target.getAttribute("data-field");
+    clearTimeout(legalFieldTimers[fkey]);
+    saveLegalField(fkey, e.target.textContent);
+  }
   // Don't re-render synchronously here: a click on a nearby button (e.g. "Send
   // note") blurs this field first, and re-rendering mid-click would replace
   // the button before its click event finishes, silently swallowing the click.
@@ -1908,16 +1951,39 @@ var debouncedBrainstorm = debounce(saveBrainstorm, 700);
 var debouncedGrowthNotes = debounce(saveGrowthNotes, 700);
 var debouncedGutNotes = debounce(saveGutNotes, 700);
 
+// Fill-in fields (Legal & Launch Kit documents) each need their own debounce
+// timer, keyed by field name, so typing in one doesn't reset another's timer.
+var legalFieldTimers = {};
+function saveLegalField(key, text){
+  mutateSection("legal", function(fresh){
+    var base = Object.assign({checks:{}, fields:{}}, fresh||{});
+    var fields = Object.assign({}, base.fields); fields[key] = text;
+    return Object.assign({}, base, {fields:fields});
+  });
+}
+function debouncedLegalField(key, text){
+  clearTimeout(legalFieldTimers[key]);
+  legalFieldTimers[key] = setTimeout(function(){ saveLegalField(key, text); }, 700);
+}
+
 content.addEventListener("input", function(e){
   var t = e.target;
   if(t.matches('[data-action="weekNotes"]')) debouncedWeekNotes(parseInt(t.getAttribute("data-week"),10), t.value);
   else if(t.matches('[data-action="brainstorm"]')) debouncedBrainstorm(t.value);
   else if(t.matches('[data-action="growthNotes"]')) debouncedGrowthNotes(t.value);
   else if(t.matches('[data-action="gutNotes"]')) debouncedGutNotes(t.value);
+  else if(t.matches('[data-action="legalField"]')) debouncedLegalField(t.getAttribute("data-field"), t.textContent);
 });
 
 content.addEventListener("keydown", function(e){
   var t = e.target;
+  if(t.matches && t.matches('[data-action="legalField"]') && e.key==="Enter"){
+    // These are one-line fill-in-the-blank fields, not notes — Enter commits
+    // and blurs instead of inserting a newline into the contenteditable span.
+    e.preventDefault();
+    t.blur();
+    return;
+  }
   if(t.matches('[data-action="noteComposer"]') && e.key==="Enter" && !e.shiftKey){
     e.preventDefault();
     handleSendNote();
