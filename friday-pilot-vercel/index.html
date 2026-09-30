@@ -1417,7 +1417,8 @@ var LEGAL_FIELD_PLACEHOLDERS = {
   sessionRateAmt: "___",
   evalRateAmt: "___",
   commMethod: "email / text",
-  responseTime: "1–2 business days"
+  responseTime: "1–2 business days",
+  poolTempRange: "84–92°F"
 };
 function fillField(key){
   var val = (state.legal && state.legal.fields && state.legal.fields[key]) || "";
@@ -1466,8 +1467,25 @@ function intakeFormHtml(){
     '<ul>'+
       '<li>Age at diagnosis, if applicable</li>'+
       '<li>Current or past therapies (OT, PT, speech, ABA, etc.) — provider names and frequency</li>'+
-      '<li>Current school/preschool placement, and any relevant IEP/504 accommodations</li>'+
       '<li>Areas of daily function that are hardest right now (dressing, feeding, play, transitions, etc.)</li>'+
+    '</ul>'+
+    '<h5>Educational History</h5>'+
+    '<ul>'+
+      '<li>Current school/preschool/homeschool placement, grade level, and teacher name</li>'+
+      '<li>Relevant IEP, 504 plan, or other school-based accommodations/services</li>'+
+      '<li>School-based OT, PT, or speech services currently received, if any</li>'+
+      '<li>Any relevant school reports or evaluations available to share (optional)</li>'+
+    '</ul>'+
+    '<h5>Occupational Therapy Questionnaire — check all that apply</h5>'+
+    '<p><i>This section flags specific domains so the evaluation starts from what you already know, not from scratch.</i></p>'+
+    '<ul>'+
+      '<li><b>Oral motor / feeding</b> — ☐ picky/selective eating &nbsp; ☐ chewing/swallowing difficulty &nbsp; ☐ drooling &nbsp; ☐ tube feeding &nbsp; ☐ none noted</li>'+
+      '<li><b>Fine motor</b> — ☐ grasp/pincer difficulty &nbsp; ☐ handwriting/pre-writing difficulty &nbsp; ☐ using utensils/buttons/zippers &nbsp; ☐ none noted</li>'+
+      '<li><b>Visual motor</b> — ☐ hand-eye coordination &nbsp; ☐ copying shapes/letters &nbsp; ☐ catching/throwing &nbsp; ☐ none noted</li>'+
+      '<li><b>Sensory processing &amp; regulation</b> — ☐ over-responsive to touch/sound/movement &nbsp; ☐ under-responsive/seeking input &nbsp; ☐ difficulty with transitions &nbsp; ☐ meltdowns/shutdowns &nbsp; ☐ none noted</li>'+
+      '<li><b>Aquatic experience &amp; skill level</b> — ☐ never been in a pool &nbsp; ☐ non-swimmer, uncomfortable &nbsp; ☐ beginner, tolerates with support &nbsp; ☐ comfortable/independent in water &nbsp; prior swim lessons? '+blank(70)+'</li>'+
+      '<li><b>Disability / precautions relevant to water-based therapy</b> — ☐ seizure precautions in water &nbsp; ☐ uses mobility equipment in/around pool (specify: '+blank(90)+') &nbsp; ☐ skin/wound precautions (chlorine exposure) &nbsp; ☐ latex-sensitive equipment concerns &nbsp; ☐ other: '+blank(120)+'</li>'+
+      '<li><b>Primary concerns to address in OT sessions</b> — in your own words: '+blank(220)+'</li>'+
     '</ul>'+
     '<h5>Scheduling &amp; Payment</h5>'+
     '<ul>'+
@@ -1581,7 +1599,7 @@ function serviceAgreementHtml(){
 function photoReleaseHtml(){
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
-    '<div class="doc-title">'+fillField("practiceName")+' — Photo, Video &amp; Testimonial Release (Optional)</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Photo, Video &amp; Media Recording Release (Optional)</div>'+
     '<p class="helptext" style="margin-bottom:14px">Separate from and optional beyond the Consent for Aquatic OT Treatment, which only covers photos/video for clinical documentation. This release is for marketing use only — signing it is never required to receive treatment.</p>'+
     '<h5>Permission</h5>'+
     '<p>I give permission for '+fillField("practiceName")+' to use photos and/or video of my child taken during sessions for the following purposes (check all that apply):</p>'+
@@ -1602,45 +1620,302 @@ function photoReleaseHtml(){
   '</div>';
 }
 
+function participationAgreementHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Draft — for review</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Participation Agreement &amp; Consents</div>'+
+    '<p class="helptext" style="margin-bottom:14px">A single registration packet covering physician/emergency info, general consents, privacy, attendance, and billing — sign once at intake alongside the Treatment Consent form.</p>'+
+    '<h5>Physician Information</h5>'+
+    '<ul><li>Primary/referring physician name: '+blank(180)+'</li><li>Phone: '+blank(120)+' &nbsp; Fax: '+blank(120)+'</li><li>Address: '+blank(220)+'</li></ul>'+
+    '<h5>Emergency Contact &amp; Medical Snapshot</h5>'+
+    '<ul>'+
+      '<li>Emergency contact name &amp; relationship: '+blank(200)+' &nbsp; Phone: '+blank(120)+'</li>'+
+      '<li>Known allergies: '+blank(220)+'</li>'+
+      '<li>Current medications: '+blank(220)+'</li>'+
+      '<li>Key medical conditions the therapist should know about day-to-day: '+blank(220)+'</li>'+
+    '</ul>'+
+    '<h5>Responsible Party for Payment</h5>'+
+    '<p>Financially responsible party (if different from the parent/guardian listed on the Intake Form): '+blank(200)+'</p>'+
+    '<h5>General Consent to Evaluate &amp; Treat</h5>'+
+    '<p>I consent to an occupational therapy evaluation and ongoing treatment for my child by '+fillField("practiceName")+'. This is separate from, and in addition to, the aquatic-specific risks and pool supervision details covered in the Treatment Consent form.</p>'+
+    '<h5>Consent for Bathroom &amp; Changing Assistance</h5>'+
+    '<p>I understand that, given the aquatic setting, my child may need help using the restroom or changing into/out of swimwear before or after a session. I consent to age-appropriate assistance from the treating therapist or another designated staff member when needed, and understand I will be notified of any bathroom accident or incident during a session.</p>'+
+    '<h5>Acknowledgement of Privacy Practices</h5>'+
+    '<p>'+fillField("practiceName")+' keeps clinical records confidential and does not share them outside the circle of care without written authorization, except where required by law. Because this is a private-pay practice, no insurance eligibility verification or insurance-based data sharing applies — records are shared only at your request (e.g. a superbill, or the Release of Information in the Intake Form). ☐ I acknowledge I have received and understand this practice\'s privacy practices.</p>'+
+    '<h5>Attendance Policy</h5>'+
+    '<p>Consistent Friday attendance is part of what makes progress possible in a once-weekly model. Please give as much notice as possible for planned absences (vacations, appointments), and see the Cancellation &amp; No-Show Policy for what counts as late notice. An extended unplanned absence may prompt a conversation about whether the current schedule still fits.</p>'+
+    '<h5>Missed Appointment &amp; Cancellation Policy</h5>'+
+    '<p>Summary: at least '+fillField("noticeHours")+' hours\' notice to cancel; late cancellations/no-shows are billed at '+fillField("lateFee")+'. Full policy, including repeat-no-show handling, is in the standalone Cancellation &amp; No-Show Policy document.</p>'+
+    '<h5>Billing &amp; Financial Responsibility</h5>'+
+    '<ul>'+
+      '<li>'+fillField("practiceName")+' is private-pay only and does not bill insurance directly, verify insurance eligibility, or accept assignment of insurance benefits.</li>'+
+      '<li>The responsible party listed above is financially responsible for all session and evaluation fees at the time of service.</li>'+
+      '<li>A superbill is available on request for out-of-network reimbursement, submitted by the family at their own discretion — see the Service Agreement.</li>'+
+    '</ul>'+
+    '<h5>Credit Card / Payment-on-File Authorization</h5>'+
+    '<p>I authorize '+fillField("practiceName")+' to keep the card below on file and to charge it for session fees, evaluation fees, and any late-cancellation/no-show fees per the policy above.</p>'+
+    '<ul><li>Cardholder name: '+blank(180)+'</li><li>Card number: '+blank(200)+' &nbsp; Exp: '+blank(70)+' &nbsp; CVV: '+blank(60)+'</li><li>Billing zip code: '+blank(90)+'</li></ul>'+
+    legalDisclaimer("Never type a real card number into this app — this section is a paper-form field layout only. Capture actual card details through a PCI-compliant processor (Stripe, Square, or your EHR/scheduling tool's built-in billing) once you pick one in Week 8.")+
+    '<div class="doc-sig" style="margin-top:14px">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Relationship to child: '+blank(90)+' &nbsp; Date: '+blank(90)+'</div>'+
+  '</div>';
+}
+
+function privacyNoticeHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Draft — for review</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Notice of Privacy Practices</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Effective date: '+blank(100)+'. Because this practice is private-pay and doesn\'t bill insurance electronically, it likely isn\'t a "HIPAA covered entity" in the technical sense — but California\'s Confidentiality of Medical Information Act (CMIA) still applies, and following HIPAA-style practices voluntarily is good professional standard regardless. Confirm covered-entity status with an attorney if that ever changes (e.g. if insurance billing is added later).</p>'+
+    '<h5>What Information We Collect</h5>'+
+    '<p>Demographic and contact information, medical and developmental history, evaluation findings, session notes, progress and discharge reports, and billing records — collected via the Intake Form and during treatment.</p>'+
+    '<h5>How We Use It</h5>'+
+    '<ul>'+
+      '<li>To evaluate, plan, and provide occupational therapy services.</li>'+
+      '<li>To communicate with you about scheduling, progress, and billing.</li>'+
+      '<li>To coordinate care with other providers, but <b>only</b> with your written authorization (see the Release of Information form) — never shared for insurance billing, since '+fillField("practiceName")+' doesn\'t bill insurance.</li>'+
+    '</ul>'+
+    '<h5>How We Protect It</h5>'+
+    '<p>Records are kept in a secure EHR/documentation system with access limited to the treating therapist, and are retained per California OT licensure recordkeeping requirements.</p>'+
+    '<h5>When We May Share Information Without Your Authorization</h5>'+
+    '<ul>'+
+      '<li>When required by law (e.g. mandated reporting of suspected child abuse or neglect).</li>'+
+      '<li>To prevent serious, imminent harm to the client or others.</li>'+
+      '<li>In response to a valid court order or subpoena.</li>'+
+    '</ul>'+
+    '<h5>Your Rights</h5>'+
+    '<ul>'+
+      '<li>Request a copy of your child\'s records at any time, in writing.</li>'+
+      '<li>Request corrections to records you believe are inaccurate.</li>'+
+      '<li>Request an accounting of any disclosures made outside routine treatment/communication.</li>'+
+      '<li>Revoke any prior authorization to share records, in writing, at any time (except for disclosures already made in reliance on it).</li>'+
+    '</ul>'+
+    '<h5>Questions or Concerns</h5>'+
+    '<p>Contact '+fillField("practiceName")+' by '+fillField("commMethod")+' with any privacy question or concern.</p>'+
+    '<div class="doc-sig">☐ I acknowledge I have received and reviewed this Notice of Privacy Practices.<br>Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Date: '+blank(100)+'</div>'+
+  '</div>';
+}
+function releaseOfInfoHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Draft — for review</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Release of Information / Authorization to Exchange Records</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Use this standalone form whenever records actually need to go somewhere specific (a school, pediatrician, or other provider) — more formal than the optional checkbox on the Intake Form.</p>'+
+    '<ul>'+
+      '<li>Client name: '+blank(200)+' &nbsp; DOB: '+blank(100)+'</li>'+
+    '</ul>'+
+    '<h5>Release Information To / From</h5>'+
+    '<ul>'+
+      '<li>Name: '+blank(200)+' &nbsp; Title/role: '+blank(160)+'</li>'+
+      '<li>Organization: '+blank(220)+'</li>'+
+      '<li>Address: '+blank(260)+'</li>'+
+      '<li>Phone: '+blank(140)+' &nbsp; Fax/email: '+blank(160)+'</li>'+
+    '</ul>'+
+    '<h5>Information to Be Released (check all that apply)</h5>'+
+    '<p>☐ Evaluation report &nbsp; ☐ Progress reports &nbsp; ☐ Discharge/exit summary &nbsp; ☐ Session notes &nbsp; ☐ Intake/medical history &nbsp; ☐ Other: '+blank(180)+'</p>'+
+    '<h5>Purpose of Disclosure</h5>'+
+    '<p>'+blank(300)+'</p>'+
+    '<h5>Duration &amp; Revocation</h5>'+
+    '<p>This authorization is valid from the date signed below through '+blank(120)+' (or one year from signature if left blank), and may be revoked in writing at any time except for disclosures already made in reliance on it.</p>'+
+    '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Relationship to child: '+blank(90)+' &nbsp; Date: '+blank(90)+'</div>'+
+  '</div>';
+}
+
+function inHomeAgreementHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Draft — for review</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — In-Home Aquatic Service Agreement &amp; Home Pool Safety Checklist</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Only needed if a session is ever held at a family\'s own home pool instead of '+fillField("facilityName")+' — not part of the standard rented-facility model. The therapist checks these conditions at arrival and may decline or reschedule a session if they aren\'t met.</p>'+
+    '<h5>Pool Access &amp; Condition</h5>'+
+    '<p>☐ Water is visibly clean and clear to the bottom, free of algae/debris &nbsp; ☐ Pool is accessible without hazards blocking the path from the house/gate to the pool</p>'+
+    '<h5>Safe Entry &amp; Exit</h5>'+
+    '<p>☐ Functioning ladder, steps, or ramp at the entry point &nbsp; ☐ Entry surfaces are non-slip &nbsp; ☐ No missing or broken pool equipment creating a hazard</p>'+
+    '<h5>Deck Condition</h5>'+
+    '<p>☐ Deck/surrounding area is free of tripping hazards and excess standing water &nbsp; ☐ Enough clear space for the therapist to move safely around the pool during the session</p>'+
+    '<h5>Pool Temperature &amp; Chemicals</h5>'+
+    '<p>Target water temperature: '+fillField("poolTempRange")+'. ☐ Chemical levels (chlorine/bromine, pH) have been tested same-day or per the family\'s regular pool-service schedule and are within safe range. The therapist may ask to see a recent test strip/log or service report.</p>'+
+    '<h5>Fencing &amp; Barrier Safety</h5>'+
+    '<p>☐ Pool has code-compliant fencing/barrier and a self-latching gate consistent with California pool safety requirements <i>(confirm the exact requirement for your city/county — this varies)</i>.</p>'+
+    '<h5>Pets</h5>'+
+    '<p>☐ Pets are secured away from the pool area for the full session (safety, hygiene, and to avoid distraction).</p>'+
+    '<h5>Other Children &amp; Adults Present</h5>'+
+    '<ul>'+
+      '<li>The participating child\'s parent/guardian must remain on-site for the full session, same as at '+fillField("facilityName")+'.</li>'+
+      '<li>Siblings/other children may be present only if supervised separately and not disruptive to the session.</li>'+
+      '<li>Other adults not part of the household should not be present without discussing it with the therapist in advance.</li>'+
+    '</ul>'+
+    '<h5>Bathroom Access</h5>'+
+    '<p>☐ A bathroom is accessible on-site for changing and restroom needs before/after the session.</p>'+
+    '<h5>Emergency Access</h5>'+
+    '<p>Home address for emergency responders: '+blank(260)+'. ☐ A clear path to the pool area is available for emergency access if ever needed.</p>'+
+    '<h5>Acknowledgment</h5>'+
+    '<p>I understand '+fillField("practiceName")+' does not inspect, certify, or maintain this pool — the family is responsible for its ongoing safety and maintenance. If the pool doesn\'t meet the conditions above at arrival, the therapist may decline or reschedule the session; whether this counts toward the Cancellation &amp; No-Show Policy depends on notice given beforehand.</p>'+
+    '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Date: '+blank(100)+' &nbsp; Therapist checked conditions on arrival: '+blank(100)+'</div>'+
+  '</div>';
+}
+
 var LEGAL_DOCS = [
-  {id:"intake", label:"New Client Intake Form", blurb:"Child info, aquatic-specific medical history, referral source, private-pay acknowledgment.", render:intakeFormHtml},
+  {id:"intake", label:"New Client Intake Form", blurb:"Demographic/contact info, medical & educational history, OT questionnaire, aquatic experience.", render:intakeFormHtml},
   {id:"consent", label:"Treatment Consent Form", blurb:"Aquatic-specific risks, pool supervision, parent/guardian presence, photo/video consent.", render:consentFormHtml},
+  {id:"participation", label:"Participation Agreement & Consents", blurb:"Physician/emergency info, privacy ack., bathroom-assistance consent, attendance, billing & card-on-file.", render:participationAgreementHtml},
+  {id:"privacyNotice", label:"Notice of Privacy Practices", blurb:"HIPAA-style privacy notice — what's collected, how it's protected, your rights, when it's shared without authorization.", render:privacyNoticeHtml},
+  {id:"releaseOfInfo", label:"Release of Information / Records Exchange", blurb:"Standalone authorization to send records to a specific school, pediatrician, or other provider, with an expiration date.", render:releaseOfInfoHtml},
   {id:"cancellation", label:"Cancellation / No-Show Policy", blurb:"Notice window, late fee, weather/facility exceptions, repeated no-show handling.", render:cancellationPolicyHtml},
   {id:"agreement", label:"Service Agreement & Practice Policies", blurb:"Session logistics, fees, communication, records, ending services.", render:serviceAgreementHtml},
-  {id:"photoRelease", label:"Photo, Video & Testimonial Release", blurb:"Optional, separate from clinical consent — website/social/testimonial use, revocable any time.", render:photoReleaseHtml}
+  {id:"photoRelease", label:"Photo, Video & Media Recording Release", blurb:"Optional, separate from clinical consent — website/social/testimonial use, revocable any time.", render:photoReleaseHtml},
+  {id:"inHome", label:"In-Home Aquatic Service Agreement", blurb:"For sessions at a family's own pool instead of the rented facility — safety checklist + liability acknowledgment.", render:inHomeAgreementHtml}
 ];
 
-function docSectionHtml(){
-  var reviewedCount = LEGAL_DOCS.filter(function(d){ return state.legal && state.legal.checks && state.legal.checks["doc_"+d.id]; }).length;
-  var badge = '<span class="pill '+(reviewedCount===LEGAL_DOCS.length?"complete":reviewedCount?"progress":"notstarted")+'" style="flex:none;margin-right:10px">'+reviewedCount+' / '+LEGAL_DOCS.length+' reviewed</span>';
-  var docCards = LEGAL_DOCS.map(function(d){
-    var open = !!legalOpenState["doc_"+d.id];
-    var reviewed = !!(state.legal && state.legal.checks && state.legal.checks["doc_"+d.id]);
+function evalReportHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Editable template</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Occupational Therapy Evaluation Report</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Fill in per client at evaluation — this is a chart-note template, not a form clients sign.</p>'+
+    '<ul>'+
+      '<li>Client name: '+blank(200)+' &nbsp; DOB: '+blank(100)+'</li>'+
+      '<li>Date of evaluation: '+blank(100)+' &nbsp; Referral source: '+blank(180)+'</li>'+
+      '<li>Diagnosis(es): '+blank(220)+'</li>'+
+    '</ul>'+
+    '<h5>Reason for Referral</h5><p>'+blank(400)+'</p>'+
+    '<h5>Background &amp; History Summary</h5><p><i>Medical, developmental, and educational history per Intake Form.</i></p><p>'+blank(400)+'</p>'+
+    '<h5>Assessment Methods</h5><p>☐ Standardized testing (specify: '+blank(160)+') &nbsp; ☐ Clinical/skilled observation &nbsp; ☐ Aquatic-specific skills assessment &nbsp; ☐ Parent/caregiver interview</p>'+
+    '<h5>Findings by Domain</h5>'+
+    '<ul>'+
+      '<li>Fine motor: '+blank(300)+'</li>'+
+      '<li>Visual motor: '+blank(300)+'</li>'+
+      '<li>Sensory processing &amp; regulation: '+blank(300)+'</li>'+
+      '<li>Oral motor / feeding (if applicable): '+blank(300)+'</li>'+
+      '<li>Aquatic skill &amp; comfort level: '+blank(300)+'</li>'+
+      '<li>Functional performance / daily living impact: '+blank(300)+'</li>'+
+    '</ul>'+
+    '<h5>Clinical Impressions &amp; Summary</h5><p>'+blank(400)+'</p>'+
+    '<h5>Recommended Services</h5><p>Frequency/duration: '+blank(160)+' &nbsp; Setting: aquatic OT at '+fillField("facilityName")+'</p>'+
+    '<h5>Goals</h5>'+
+    '<ul>'+
+      '<li>Goal 1: '+blank(300)+' — measurable by: '+blank(200)+'</li>'+
+      '<li>Goal 2: '+blank(300)+' — measurable by: '+blank(200)+'</li>'+
+      '<li>Goal 3: '+blank(300)+' — measurable by: '+blank(200)+'</li>'+
+    '</ul>'+
+    '<div class="doc-sig">Therapist signature/credentials: '+blank(220)+' &nbsp; Date: '+blank(100)+'</div>'+
+  '</div>';
+}
+function progressReportHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Editable template</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Progress Report</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Fill in per reporting period (e.g. every 8–12 sessions, or per family/school request).</p>'+
+    '<ul>'+
+      '<li>Client name: '+blank(200)+' &nbsp; DOB: '+blank(100)+'</li>'+
+      '<li>Reporting period: '+blank(160)+' &nbsp; Sessions attended this period: '+blank(60)+'</li>'+
+    '</ul>'+
+    '<h5>Goals &amp; Progress</h5>'+
+    '<ul>'+
+      '<li>Goal 1: '+blank(260)+' — progress/status: '+blank(200)+'</li>'+
+      '<li>Goal 2: '+blank(260)+' — progress/status: '+blank(200)+'</li>'+
+      '<li>Goal 3: '+blank(260)+' — progress/status: '+blank(200)+'</li>'+
+    '</ul>'+
+    '<h5>Skills Gained / Notable Changes</h5><p>'+blank(400)+'</p>'+
+    '<h5>Aquatic-Specific Progress</h5><p><i>Comfort/skill progression in water.</i></p><p>'+blank(400)+'</p>'+
+    '<h5>Barriers / Concerns</h5><p>'+blank(400)+'</p>'+
+    '<h5>Plan for Next Period</h5><p>☐ Continue current goals &nbsp; ☐ Modify goals &nbsp; ☐ Add new goal(s) &nbsp; Notes: '+blank(250)+'</p>'+
+    '<div class="doc-sig">Therapist signature/credentials: '+blank(220)+' &nbsp; Date: '+blank(100)+'</div>'+
+  '</div>';
+}
+function dischargeReportHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Editable template</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Discharge / Exit Summary</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Fill in when a client\'s services end, for any reason.</p>'+
+    '<ul>'+
+      '<li>Client name: '+blank(200)+' &nbsp; DOB: '+blank(100)+'</li>'+
+      '<li>Date of initial evaluation: '+blank(100)+' &nbsp; Date of discharge: '+blank(100)+' &nbsp; Total sessions provided: '+blank(70)+'</li>'+
+    '</ul>'+
+    '<h5>Reason for Discharge</h5>'+
+    '<p>☐ Goals met &nbsp; ☐ Family request &nbsp; ☐ Financial/scheduling &nbsp; ☐ Relocation &nbsp; ☐ Other: '+blank(200)+'</p>'+
+    '<h5>Summary of Treatment Course</h5><p>'+blank(400)+'</p>'+
+    '<h5>Progress Toward Goals at Discharge</h5>'+
+    '<ul>'+
+      '<li>Goal 1: '+blank(260)+' — outcome: '+blank(200)+'</li>'+
+      '<li>Goal 2: '+blank(260)+' — outcome: '+blank(200)+'</li>'+
+      '<li>Goal 3: '+blank(260)+' — outcome: '+blank(200)+'</li>'+
+    '</ul>'+
+    '<h5>Current Functional Status Summary</h5><p>'+blank(400)+'</p>'+
+    '<h5>Recommendations / Referrals for Continued Care</h5><p>'+blank(400)+'</p>'+
+    '<h5>Follow-Up Plan</h5><p>'+blank(400)+'</p>'+
+    '<div class="doc-sig">Therapist signature/credentials: '+blank(220)+' &nbsp; Date: '+blank(100)+'</div>'+
+  '</div>';
+}
+function incidentReportHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Editable template</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Incident Report</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Fill out the same day as any fall, water-related incident, injury, medical event, or near-miss — even a minor one. Keep in the client\'s file; notify the pool facility per its own policy if the incident involves the pool/deck.</p>'+
+    '<ul>'+
+      '<li>Client name: '+blank(200)+' &nbsp; DOB: '+blank(100)+'</li>'+
+      '<li>Date of incident: '+blank(120)+' &nbsp; Time: '+blank(100)+'</li>'+
+      '<li>Location: '+fillField("facilityName")+' — specific area: '+blank(160)+' (pool deck / in water / changing area / other)</li>'+
+    '</ul>'+
+    '<h5>Type of Incident (check all that apply)</h5>'+
+    '<p>☐ Slip/fall &nbsp; ☐ Water aspiration/swallowing &nbsp; ☐ Near-submersion &nbsp; ☐ Seizure &nbsp; ☐ Allergic reaction &nbsp; ☐ Equipment-related &nbsp; ☐ Behavioral/emotional dysregulation &nbsp; ☐ Other: '+blank(180)+'</p>'+
+    '<h5>Description of What Happened</h5><p><i>Facts observed, in order — not interpretation or blame.</i></p><p>'+blank(400)+'</p>'+
+    '<h5>Immediate Action Taken</h5><p>☐ First aid provided &nbsp; ☐ Lifeguard/facility staff notified &nbsp; ☐ 911 called &nbsp; ☐ Session stopped &nbsp; Details: '+blank(260)+'</p>'+
+    '<h5>Witnesses</h5><p>'+blank(300)+'</p>'+
+    '<h5>Parent/Guardian Notification</h5><p>Notified by: '+blank(140)+' &nbsp; Method/time: '+blank(160)+' &nbsp; Parent response: '+blank(220)+'</p>'+
+    '<h5>Medical Follow-Up Needed?</h5><p>☐ No &nbsp; ☐ Yes — details: '+blank(260)+'</p>'+
+    '<h5>Follow-Up / Prevention Notes</h5><p>Any change to the session plan, environment, or precautions going forward.</p><p>'+blank(300)+'</p>'+
+    '<div class="doc-sig">Therapist signature/credentials: '+blank(220)+' &nbsp; Date completed: '+blank(100)+'</div>'+
+  '</div>';
+}
+var CLINICAL_TEMPLATES = [
+  {id:"eval", label:"OT Evaluation Report", blurb:"Referral reason, domain findings, aquatic skill level, clinical impressions, goals.", render:evalReportHtml},
+  {id:"progress", label:"Progress Report", blurb:"Per-period goal progress, aquatic-specific gains, plan for next period.", render:progressReportHtml},
+  {id:"discharge", label:"Discharge / Exit Summary", blurb:"Reason for discharge, goal outcomes, current status, recommendations & follow-up.", render:dischargeReportHtml},
+  {id:"incident", label:"Incident Report", blurb:"Falls, water incidents, seizures, or any injury/near-miss — what happened, action taken, parent notification.", render:incidentReportHtml}
+];
+
+function legalDocGroupHtml(sectionKey, num, title, blurb, disclaimerText, docs, checkboxLabel){
+  var doneCount = docs.filter(function(d){ return state.legal && state.legal.checks && state.legal.checks[sectionKey+"_"+d.id]; }).length;
+  var badge = '<span class="pill '+(doneCount===docs.length?"complete":doneCount?"progress":"notstarted")+'" style="flex:none;margin-right:10px">'+doneCount+' / '+docs.length+'</span>';
+  var cards = docs.map(function(d){
+    var checkKey = sectionKey+"_"+d.id;
+    var open = !!legalOpenState["doc_"+checkKey];
+    var done = !!(state.legal && state.legal.checks && state.legal.checks[checkKey]);
     return '<div class="week-card'+(open?" open":"")+'">'+
-      '<div class="week-head" data-action="toggleLegalDoc" data-doc="'+d.id+'">'+
+      '<div class="week-head" data-action="toggleLegalDoc" data-doc="'+checkKey+'">'+
         '<div class="week-head-title"><b>'+esc(d.label)+'</b><div class="helptext" style="margin-top:2px">'+esc(d.blurb)+'</div></div>'+
-        '<span class="pill '+(reviewed?"complete":"notstarted")+'" style="flex:none">'+(reviewed?"Reviewed":"Not reviewed")+'</span>'+
+        '<span class="pill '+(done?"complete":"notstarted")+'" style="flex:none">'+(done?"Done":"Not yet")+'</span>'+
         '<svg class="chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
       '</div>'+
       '<div class="week-body">'+
         d.render()+
         '<div class="task-item" style="margin-top:14px;align-items:center">'+
-          '<input type="checkbox" data-action="legalCheck" data-id="doc_'+d.id+'" '+(reviewed?"checked":"")+'>'+
-          '<label>Mark as reviewed with attorney/CPA</label>'+
+          '<input type="checkbox" data-action="legalCheck" data-id="'+checkKey+'" '+(done?"checked":"")+'>'+
+          '<label>'+esc(checkboxLabel)+'</label>'+
         '</div>'+
       '</div>'+
     '</div>';
   }).join("");
-  return legalCollapseCard("docs","3","First-draft business documents",LEGAL_DOCS.length+" ready-to-edit drafts, one document at a time.",badge,
-    legalDisclaimer('Written for THIS practice\'s specifics, not adapted from talk-therapy templates — have a business/healthcare attorney review each before real use, especially the consent form\'s risk disclosures and the cancellation policy\'s fee language (enforceability of no-show fees varies).')+
-    '<div class="stack" style="gap:10px;margin-top:14px">'+docCards+'</div>'
+  return legalCollapseCard(sectionKey,num,title,blurb,badge,
+    legalDisclaimer(disclaimerText)+
+    '<div class="stack" style="gap:10px;margin-top:14px">'+cards+'</div>'
+  );
+}
+
+function docSectionHtml(){
+  return legalDocGroupHtml("docs","3","First-draft business documents",LEGAL_DOCS.length+" ready-to-edit drafts, one document at a time.",
+    'Written for THIS practice\'s specifics, not adapted from talk-therapy templates — have a business/healthcare attorney review each before real use, especially the consent form\'s risk disclosures and the cancellation policy\'s fee language (enforceability of no-show fees varies). Skipped on purpose: a "healthcare eligibility waiver" / insurance-eligibility section — that only applies to practices that bill or verify insurance, which doesn\'t fit a private-pay-only model.',
+    LEGAL_DOCS, "Mark as reviewed with attorney/CPA"
+  );
+}
+function templatesSectionHtml(){
+  return legalDocGroupHtml("tmpl","4","Clinical documentation templates",CLINICAL_TEMPLATES.length+" chart-note templates — reused per client, not signed once.",
+    'These are internal charting templates, not client-signed paperwork — no attorney review needed, just adapt the structure to how you chart. Mirror your state\'s OT documentation requirements before relying on them for real records.',
+    CLINICAL_TEMPLATES, "Mark as my standard template"
   );
 }
 
 function viewLegal(){
-  var totalSteps = LEGAL_EIN_STEPS.length + LEGAL_ENTITY_QUESTIONS.length + LEGAL_DOCS.length;
+  var totalSteps = LEGAL_EIN_STEPS.length + LEGAL_ENTITY_QUESTIONS.length + LEGAL_DOCS.length + CLINICAL_TEMPLATES.length;
   var doneSteps = legalStepsDone(LEGAL_EIN_STEPS) + legalStepsDone(LEGAL_ENTITY_QUESTIONS) +
-    LEGAL_DOCS.filter(function(d){ return state.legal && state.legal.checks && state.legal.checks["doc_"+d.id]; }).length;
+    LEGAL_DOCS.filter(function(d){ return state.legal && state.legal.checks && state.legal.checks["docs_"+d.id]; }).length +
+    CLINICAL_TEMPLATES.filter(function(d){ return state.legal && state.legal.checks && state.legal.checks["tmpl_"+d.id]; }).length;
   return '' +
   '<div class="view-head">'+
     '<div class="flex-between">'+
@@ -1650,12 +1925,13 @@ function viewLegal(){
       '</div>'+
       '<span class="pill '+(doneSteps===totalSteps?"complete":doneSteps?"progress":"notstarted")+'" style="flex:none;font-size:13px;padding:6px 14px">'+doneSteps+' / '+totalSteps+' steps done</span>'+
     '</div>'+
-    '<p class="view-sub">Three bite-sized cards — click a header to expand it, check things off as you go. Fill in the brackets in the documents and get a CPA/attorney to sign off before anything here goes in front of a real client.</p>'+
+    '<p class="view-sub">Four bite-sized cards — click a header to expand it, check things off as you go. Fill in the brackets in the documents and get a CPA/attorney to sign off before anything here goes in front of a real client.</p>'+
   '</div>'+
   '<div class="stack" style="gap:12px">'+
     einSectionHtml()+
     entitySectionHtml()+
     docSectionHtml()+
+    templatesSectionHtml()+
   '</div>';
 }
 
