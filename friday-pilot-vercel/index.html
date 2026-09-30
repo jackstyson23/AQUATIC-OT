@@ -258,6 +258,18 @@
   .stage-row.current{background:var(--surface-alt);border-radius:var(--radius-s)}
   .stage-num{font-family:var(--font-mono);font-weight:700;color:var(--brand);text-align:center}
 
+  .prose{font-size:13.5px;line-height:1.65}
+  .prose h4{font-size:14.5px;margin:18px 0 6px}
+  .prose h4:first-child{margin-top:0}
+  .prose h5{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);margin:14px 0 6px;font-family:var(--font-body);font-weight:700}
+  .prose p{margin:0 0 10px}
+  .prose ul,.prose ol{margin:0 0 12px;padding-left:21px}
+  .prose li{margin-bottom:5px}
+  .prose .fill{background:var(--input-bg);border:1px solid var(--input-border);border-radius:4px;padding:0 5px;font-family:var(--font-mono);font-size:12px;white-space:nowrap}
+  .doc-sig{border-top:1px dashed var(--border);margin-top:16px;padding-top:14px;font-size:13px;color:var(--text-muted)}
+  .doc-title{font-family:var(--font-display);font-weight:600;font-size:16.5px;color:var(--text);margin-bottom:2px}
+  .doc-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700;margin-bottom:6px}
+  .toc-row{display:flex;flex-wrap:wrap;gap:8px}
   ::placeholder{color:var(--text-faint)}
   .section-title{font-size:16px;margin-bottom:2px}
   .helptext{font-size:12.5px;color:var(--text-muted)}
@@ -706,7 +718,8 @@ function submitGate(){
 var NAV = [
   ["overview","OV","Overview"],["roadmap","RM","16-Week Roadmap"],["pool","PL","Pool Log"],
   ["demand","DL","Demand Validation"],["referrals","RN","Referral Network"],["financial","FF","Financial Forecast"],
-  ["grid","GG","Growth Scenario Grid"],["stages","GS","Growth Stages"],["exit","ET","Exit Threshold"],["notes","NT","Notes"]
+  ["grid","GG","Growth Scenario Grid"],["stages","GS","Growth Stages"],["exit","ET","Exit Threshold"],
+  ["legal","LK","Legal & Launch Kit"],["notes","NT","Notes"]
 ];
 
 function renderNav(){
@@ -1264,6 +1277,279 @@ function viewExit(){
   '</div>';
 }
 
+/* ============================== VIEW: LEGAL & LAUNCH KIT ============================== */
+/* Static reference content (not synced state) — the free/DIY equivalent of a
+   paid "practice launch" course, drafted for THIS practice's specifics
+   (solo, CA, private-pay, ages 2-16, rented pool time, Friday sessions).
+   Everything here is a first draft to review and adapt, not legal advice. */
+
+function legalDisclaimer(text){
+  return '<div class="decision-flag"><span>⚑</span><span>'+text+'</span></div>';
+}
+
+function einSectionHtml(){
+  return '<div class="card" id="legalEin">'+
+    '<h3 class="section-title">1. Get an EIN — free, direct from the IRS</h3>'+
+    '<div class="prose" style="margin-top:10px">'+
+      '<p>An EIN (Employer Identification Number) is the business\'s own tax ID number. Even solo and private-pay, it\'s worth getting one so a business bank account, client paperwork, and (later) an S-corp payroll setup never need to use her personal Social Security Number. It is <b>free</b> straight from the IRS — anything that charges $50–300 "to file your EIN" is a paid middleman for a form that costs nothing.</p>'+
+      '<h5>Before you start</h5>'+
+      '<ul>'+
+        '<li><b>Decide the entity type first</b> (sole proprietorship vs. the Professional OT Corporation — see Section 2). The application asks for this up front and branches differently depending on the answer.'+
+          '<ul><li>Forming the Professional Corp: file the Articles of Incorporation with the CA Secretary of State first and get it approved/file-stamped — the EIN application will ask for the corporation\'s exact legal name and formation date.</li>'+
+          '<li>Starting sole proprietor: nothing to file first — the legal name on the application is just her own legal name.</li></ul>'+
+        '</li>'+
+        '<li>Her Social Security Number (she is the "responsible party" on the application).</li>'+
+        '<li>The business\'s legal name, and a working/DBA name if it\'s different.</li>'+
+        '<li>A physical U.S. mailing address (home address is fine; a PO box only works as a secondary mailing address, not the physical address).</li>'+
+        '<li>The date the business started or will start.</li>'+
+        '<li>A one-line description of the business for the "principal activity" question — e.g. "outpatient occupational therapy services."</li>'+
+      '</ul>'+
+      '<h5>Apply online (irs.gov)</h5>'+
+      '<ol>'+
+        '<li>Go directly to <b>irs.gov</b> and search "Apply for an EIN Online" (or navigate to the IRS\'s own EIN Assistant). Only use the actual irs.gov domain.</li>'+
+        '<li>The online assistant is only available <b>Monday–Friday, 7:00 a.m.–10:00 p.m. Eastern time</b>.</li>'+
+        '<li>Select entity type — Sole Proprietor or Corporation, matching whatever Section 2 lands on.</li>'+
+        '<li>Enter the responsible party\'s info — her legal name and SSN.</li>'+
+        '<li>Enter the business\'s legal name, mailing address, and physical address.</li>'+
+        '<li>Enter the start date and reason for applying ("Started a new business").</li>'+
+        '<li>Answer the principal-activity questions — the closest standard category is generally <span class="fill">Health Care and Social Assistance → Offices of Physical, Occupational and Speech Therapists (NAICS 621340)</span>.</li>'+
+        '<li>Review the summary screen for typos before submitting — it can\'t be edited after issuance without contacting the IRS directly.</li>'+
+        '<li>The EIN is issued <b>immediately</b>, and the confirmation letter (CP 575) can be downloaded as a PDF right there on the confirmation page.</li>'+
+      '</ol>'+
+      '<h5>Timing &amp; gotchas</h5>'+
+      '<ul>'+
+        '<li>Total time if everything above is ready: about 15–20 minutes.</li>'+
+        '<li>The session <b>times out after ~15 minutes of inactivity</b> — have every answer ready before starting.</li>'+
+        '<li><b>Download and save the CP 575 PDF immediately.</b> The IRS doesn\'t email it, and it can\'t be re-downloaded later from that session — losing it means calling the IRS Business &amp; Specialty Tax line to get proof of the EIN reissued.</li>'+
+        '<li>Only one EIN per responsible party per day — relevant only if applying for more than one entity.</li>'+
+        '<li>If she starts as a sole proprietor and later incorporates the Professional Corp, the corporation is a <b>new legal entity</b> — plan on a second EIN application at that time; the sole-prop EIN doesn\'t transfer.</li>'+
+      '</ul>'+
+    '</div>'+
+  '</div>';
+}
+
+function entitySectionHtml(){
+  return '<div class="card" id="legalEntity" style="margin-top:16px">'+
+    '<h3 class="section-title">2. Entity structure — checklist for the CPA &amp; business attorney</h3>'+
+    legalDisclaimer('Not legal or tax advice. This is background to make those two conversations more efficient — actual formation should go through a CA business attorney (Articles of Incorporation, bylaws, share issuance) and a CPA (tax election, payroll setup).')+
+    '<div class="prose" style="margin-top:10px">'+
+      '<h5>Option A — California Professional Occupational Therapy Corporation</h5>'+
+      '<p>California doesn\'t allow OTs to run their clinical practice through an ordinary LLC or plain corporation. Occupational therapy is one of the licensed professions covered by the <b>Moscone-Knox Professional Corporation Act</b> (Corp. Code §13400 et seq., with OT among the professions listed in §13401(b)) — practicing through an entity means forming a professional corporation specific to the license, with profession-specific rules layered on top of ordinary corporate law.</p>'+
+      '<p><b>Questions/prep for the attorney:</b></p>'+
+      '<ul>'+
+        '<li>Confirm the exact required name form for an OT professional corporation (e.g. must include "Occupational Therapy Corporation" or an approved abbreviation) and check name availability with the CA Secretary of State before filing.</li>'+
+        '<li>File the Articles of Incorporation with the CA Secretary of State under that confirmed name.</li>'+
+        '<li>Confirm every shareholder, officer, and director must be a licensed OT (solo practice = her in all three roles) — ask what the plan is if that ever changes.</li>'+
+        '<li>Ask whether/how the corporation must also register with the <b>California Board of Occupational Therapy</b> separately from the Secretary of State filing, and the deadline for doing so after incorporating.</li>'+
+        '<li>Set up a registered agent (herself, a commercial registered-agent service, or the attorney\'s office).</li>'+
+        '<li>Confirm the ongoing filing cadence (Statement of Information, franchise tax) and put the actual dates on a calendar.</li>'+
+        '<li>Ask directly: does incorporating change her <i>personal</i> liability exposure for clinical negligence? For licensed professionals, incorporating generally shields against general business debts/contracts but typically does <b>not</b> shield the treating clinician from her own malpractice liability — professional liability insurance is what actually covers that, corp or no corp.</li>'+
+      '</ul>'+
+      '<p><b>Questions/prep for the CPA — S-corp tax election:</b></p>'+
+      '<ul>'+
+        '<li>Confirm the Professional Corporation should elect federal S-corp tax treatment (Form 2553) rather than default C-corp taxation, and the filing deadline (generally within 2 months and 15 days of the election\'s effective date).</li>'+
+        '<li>Ask how S-corp payroll actually works day to day: as owner, she\'d be paid a "reasonable salary" as her own W-2 employee <b>through a payroll service</b>, not self-administered, with remaining profit distributed separately.</li>'+
+        '<li>Ask about California\'s own treatment of S-corps: CA still charges the greater of an <b>$800 minimum annual franchise tax</b> or <b>1.5% of net income</b> at the entity level, even after the federal S-corp election — get real numbers at her projected income before assuming a big tax win.</li>'+
+        '<li>Ask at what revenue level the S-corp/payroll complexity actually starts saving more in self-employment tax than it costs in payroll-service and extra tax-prep fees — at Friday-only pilot volume this is not automatically worth it.</li>'+
+      '</ul>'+
+      '<h5>Option B — Sole proprietorship (lower-cost starting point)</h5>'+
+      '<p>The cheaper, simpler way to start — and what Heidi (see Week 2\'s conversation notes on the Roadmap tab) and many solo practices actually do first, converting to the Professional Corp later once volume and liability profile justify the cost.</p>'+
+      '<ul>'+
+        '<li>No filing with the CA Secretary of State — she operates under her own legal name, or a filed Fictitious Business Name (DBA) if using a different practice name (filed with the county; most CA counties also require a newspaper-publication step).</li>'+
+        '<li>Still get an EIN (Section 1) so client-facing paperwork uses the EIN instead of her SSN.</li>'+
+        '<li>Still needs professional liability insurance regardless of entity — the license, not the entity, is what carries clinical risk.</li>'+
+        '<li>Simpler taxes: income/expenses reported on Schedule C of her personal return, no payroll to run, full net profit subject to self-employment tax (the exact cost the S-corp election above is meant to reduce, once volume justifies switching).</li>'+
+        '<li>Full personal liability for business debts and contracts (not clinical malpractice, which is personal either way) — worth weighing once she\'s signing a pool-rental contract or other agreements in the business\'s name.</li>'+
+        '<li>Converting to the Professional Corp later is a normal, common move — it doesn\'t have to be the day-one decision.</li>'+
+      '</ul>'+
+    '</div>'+
+  '</div>';
+}
+
+function intakeFormHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Draft — for review</div>'+
+    '<div class="doc-title">'+'<span class="fill">[Practice Name]</span> — New Client Intake Form</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Please complete before your child\'s first session, and return by <span class="fill">[email / portal]</span> or bring it to the first Friday session.</p>'+
+    '<h5>Child Information</h5>'+
+    '<ul><li>Child\'s full legal name</li><li>Date of birth</li><li>Age</li><li>Home address</li><li>Primary language spoken at home</li></ul>'+
+    '<h5>Parent / Guardian Information</h5>'+
+    '<ul>'+
+      '<li>Parent/Guardian 1 — name, relationship to child, phone, email</li>'+
+      '<li>Parent/Guardian 2 — name, relationship to child, phone, email (if applicable)</li>'+
+      '<li>Who has legal custody / legal authority to consent to treatment? <i>(please attach documentation if custody is not shared between both parents listed above)</i></li>'+
+      '<li>Emergency contact, if different from above — name, relationship, phone</li>'+
+    '</ul>'+
+    '<h5>Referral &amp; Reason for Seeking Services</h5>'+
+    '<ul>'+
+      '<li>How did you hear about <span class="fill">[Practice Name]</span>? (referring provider, pediatrician, school, word of mouth, other)</li>'+
+      '<li>Referring provider name &amp; contact, if applicable</li>'+
+      '<li>Primary concerns / reason for seeking OT, in your own words</li>'+
+      '<li>Current diagnoses, if any</li>'+
+    '</ul>'+
+    '<h5>Medical &amp; Safety History — Aquatic-Specific</h5>'+
+    '<p><i>This section is longer than a typical intake because sessions happen in a pool — please be thorough.</i></p>'+
+    '<ul>'+
+      '<li>Seizure history (type, frequency, last occurrence, known triggers)</li>'+
+      '<li>Cardiac or respiratory conditions</li>'+
+      '<li>Skin conditions, open wounds, or recent surgical sites</li>'+
+      '<li>Feeding tubes, shunts (e.g. VP shunt), catheters, or other medical devices</li>'+
+      '<li>Known allergies, including latex, chlorine, or adhesive</li>'+
+      '<li>Current medications</li>'+
+      '<li>History of aspiration or swallowing difficulty</li>'+
+      '<li>Bowel/bladder continence status <i>(used only for session and pool-hygiene planning; kept confidential)</i></li>'+
+      '<li>Prior aquatic therapy or swim lesson experience</li>'+
+      '<li>Child\'s comfort level in water — comfortable / cautious / fearful / never been in a pool</li>'+
+      '<li>Any water-related fear or trauma the therapist should know about</li>'+
+    '</ul>'+
+    '<h5>Developmental &amp; Therapy History</h5>'+
+    '<ul>'+
+      '<li>Age at diagnosis, if applicable</li>'+
+      '<li>Current or past therapies (OT, PT, speech, ABA, etc.) — provider names and frequency</li>'+
+      '<li>Current school/preschool placement, and any relevant IEP/504 accommodations</li>'+
+      '<li>Areas of daily function that are hardest right now (dressing, feeding, play, transitions, etc.)</li>'+
+    '</ul>'+
+    '<h5>Scheduling &amp; Payment</h5>'+
+    '<ul>'+
+      '<li>Preferred day/time — Fridays; please list any constraints</li>'+
+      '<li>Preferred contact method for scheduling — text / email / call</li>'+
+      '<li>☐ I understand <span class="fill">[Practice Name]</span> is private-pay only and does not bill insurance directly. A superbill is available on request for possible out-of-network reimbursement, submitted at the family\'s own discretion.</li>'+
+    '</ul>'+
+    '<h5>Consent to Contact Others (Release of Information) — optional</h5>'+
+    '<p>I authorize <span class="fill">[Practice Name]</span> to communicate with the following individuals/providers regarding my child\'s care: <span class="fill">[names / roles]</span>. This may be revoked in writing at any time.</p>'+
+    '<div class="doc-sig">Parent/Guardian signature: <span class="fill">[_______________________]</span> &nbsp; Printed name: <span class="fill">[_______________________]</span><br>Relationship to child: <span class="fill">[_______]</span> &nbsp; Date: <span class="fill">[____/____/____]</span></div>'+
+  '</div>';
+}
+
+function consentFormHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Draft — for review</div>'+
+    '<div class="doc-title"><span class="fill">[Practice Name]</span> — Consent for Aquatic Occupational Therapy Treatment</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Child\'s name: <span class="fill">[_____________]</span> &nbsp; Date of birth: <span class="fill">[__/__/____]</span></p>'+
+    '<h5>What Aquatic OT Involves</h5>'+
+    '<p>Aquatic occupational therapy uses the properties of water — buoyancy, resistance, warmth, and sensory input — to work on <span class="fill">[goals: motor planning, strength, sensory regulation, functional skills]</span>. Sessions take place in a pool at <span class="fill">[Facility Name]</span>, a facility <span class="fill">[Practice Name]</span> rents by the hour; the pool itself is not owned or operated by <span class="fill">[Practice Name]</span>.</p>'+
+    '<h5>Risks of Aquatic Therapy — please read carefully</h5>'+
+    '<p>As with any treatment involving water, there are risks in addition to the general risks of occupational therapy. These include, but are not limited to:</p>'+
+    '<ul>'+
+      '<li>Slipping on a wet pool deck or in the water</li>'+
+      '<li>Swallowing or inhaling water</li>'+
+      '<li>Skin or eye irritation from pool chemicals (chlorine/bromine)</li>'+
+      '<li>Fatigue, chilling, or overheating</li>'+
+      '<li>Emotional or behavioral dysregulation in the water environment</li>'+
+      '<li>Risk of submersion/drowning, despite continuous 1:1 supervision by the therapist</li>'+
+    '</ul>'+
+    '<h5>Pool Environment &amp; Supervision</h5>'+
+    '<ul>'+
+      '<li>Sessions occur at <span class="fill">[Facility Name]</span>. Lifeguard coverage follows that facility\'s own policy — <span class="fill">[state the facility\'s specific policy once confirmed, e.g. "a lifeguard is on deck at all times" or "no lifeguard is on duty during our rented hour"]</span>.</li>'+
+      '<li>Your child\'s OT provides continuous 1:1 clinical supervision throughout the session. <span class="fill">[Confirm and insert: is the therapist also a certified lifeguard / water safety instructor? Adjust this line to match the actual credential before using this form.]</span> Clinical supervision by an OT is not a substitute for lifeguard supervision where the facility requires one.</li>'+
+      '<li>A parent or guardian must remain on-site (on the pool deck or immediate facility) for the full duration of every session, and is responsible for the child\'s supervision and safety during arrival, departure, and any time the child is not in direct session with the therapist.</li>'+
+      '<li>For some children or goals, the parent/guardian may be asked to enter the water as part of a treatment strategy — this will always be discussed and agreed to in advance, never sprung on you mid-session.</li>'+
+    '</ul>'+
+    '<h5>Consent to Treatment</h5>'+
+    '<ul>'+
+      '<li>I understand aquatic OT involves physical contact, handling, and positioning of my child in and around water as part of treatment.</li>'+
+      '<li>I understand <span class="fill">[Practice Name]</span> is a private-pay practice and does not bill insurance; I am responsible for payment per the Service Agreement.</li>'+
+      '<li>I understand I may stop treatment or withdraw this consent at any time, for any reason, without it affecting future care.</li>'+
+      '<li>I understand no specific outcome or result is guaranteed.</li>'+
+      '<li>I consent to the use of photos/video for clinical documentation purposes only; separate written consent will be requested before any image of my child is used for marketing.</li>'+
+    '</ul>'+
+    '<div class="doc-sig">Parent/Guardian signature: <span class="fill">[_______________________]</span> &nbsp; Printed name: <span class="fill">[_______________________]</span><br>Relationship to child: <span class="fill">[_______]</span> &nbsp; Date: <span class="fill">[____/____/____]</span></div>'+
+  '</div>';
+}
+
+function cancellationPolicyHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Draft — for review</div>'+
+    '<div class="doc-title"><span class="fill">[Practice Name]</span> — Cancellation &amp; No-Show Policy</div>'+
+    '<ul>'+
+      '<li>We ask for at least <span class="fill">[24 / 48]</span> hours\' notice to cancel or reschedule a session.</li>'+
+      '<li><b>Why this matters:</b> pool time is rented by the hour whether or not a session happens, so a late cancellation or no-show is a real cost to the practice, not just an inconvenience.</li>'+
+      '<li>A late cancellation (less than <span class="fill">[24 / 48]</span> hours\' notice) or a no-show is billed at <span class="fill">[$__ / full session rate]</span>, due before the next scheduled session.</li>'+
+      '<li>If <span class="fill">[Practice Name]</span> needs to cancel or reschedule (illness, pool closure, facility issue), there is no charge, and the session is rescheduled at the earliest available Friday.</li>'+
+      '<li>Pool or facility closures beyond our control (weather, maintenance, holiday closure) are treated as a practice-initiated cancellation — no charge, rescheduled as soon as possible.</li>'+
+      '<li>Repeated late cancellations or no-shows (three or more within a rolling <span class="fill">[3-month]</span> period) may prompt a conversation about whether ongoing Friday scheduling is still a good fit, and in some cases, discharge from the active caseload.</li>'+
+      '<li>How to cancel: text/call/email <span class="fill">[contact method]</span> as early as possible — even outside the notice window, earlier notice always helps other families get the slot.</li>'+
+      '<li>This policy is reviewed with every family at intake and is part of the Service Agreement below.</li>'+
+    '</ul>'+
+  '</div>';
+}
+
+function serviceAgreementHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Draft — for review</div>'+
+    '<div class="doc-title"><span class="fill">[Practice Name]</span> — Service Agreement &amp; Practice Policies</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Please read and sign before your child\'s first session.</p>'+
+    '<h5>About This Practice</h5>'+
+    '<ul>'+
+      '<li><span class="fill">[Practice Name]</span> is a private-pay pediatric occupational therapy practice providing aquatic-based OT for children ages 2–16, currently operating on Fridays at <span class="fill">[Facility Name]</span>.</li>'+
+      '<li><span class="fill">[Practice Name]</span> does not bill insurance directly. A superbill (an itemized receipt with diagnosis and procedure codes) is available on request, which you may submit to your insurance for possible out-of-network reimbursement — reimbursement is not guaranteed and is between you and your insurance company.</li>'+
+    '</ul>'+
+    '<h5>Sessions</h5>'+
+    '<ul>'+
+      '<li>Standard session length: <span class="fill">[45 / 60]</span> minutes, including transition/dressing time in and out of the water.</li>'+
+      '<li>Please arrive <span class="fill">[10–15]</span> minutes before your scheduled time to change and be poolside ready to begin — session time cannot be extended if you arrive late.</li>'+
+      '<li>What to bring: swimsuit, towel, goggles if your child uses them, a change of clothes, and any comfort items that help with transitions.</li>'+
+      '<li>A parent or guardian must remain on-site for the entire session (see the Consent for Aquatic OT Treatment form).</li>'+
+    '</ul>'+
+    '<h5>Fees &amp; Payment</h5>'+
+    '<ul>'+
+      '<li>Session rate: <span class="fill">$[___]</span>. Evaluation rate: <span class="fill">$[___]</span>.</li>'+
+      '<li>Payment is due at the time of service, by <span class="fill">[cash / card / Venmo / etc.]</span>.</li>'+
+      '<li>Package pricing, if offered, is described separately at intake.</li>'+
+      '<li>See the Cancellation &amp; No-Show Policy above for late-cancellation and no-show fees.</li>'+
+    '</ul>'+
+    '<h5>Communication</h5>'+
+    '<ul>'+
+      '<li>Non-urgent questions: <span class="fill">[email / text]</span>, typical response within <span class="fill">[1–2 business days]</span>.</li>'+
+      '<li>This is not an emergency service. For a medical emergency, call 911 or go to the nearest emergency room.</li>'+
+    '</ul>'+
+    '<h5>Documentation &amp; Records</h5>'+
+    '<ul>'+
+      '<li><span class="fill">[Practice Name]</span> keeps clinical documentation (evaluations, session notes, progress notes) consistent with California OT licensure and recordkeeping requirements, and treats all records as confidential even though this is a private-pay, non-insurance practice.</li>'+
+      '<li>You may request a copy of your child\'s records at any time, in writing.</li>'+
+    '</ul>'+
+    '<h5>Scope &amp; Location</h5>'+
+    '<p>Sessions currently take place at <span class="fill">[Facility Name]</span> on Fridays. Location and availability are subject to change based on pool access, and families will be notified as early as possible of any change.</p>'+
+    '<h5>Ending Services</h5>'+
+    '<p>Either you or <span class="fill">[Practice Name]</span> may end services at any time, for any reason, with reasonable notice. <span class="fill">[Practice Name]</span> will provide a discharge summary and, where appropriate, referrals to continue care elsewhere.</p>'+
+    '<h5>Agreement</h5>'+
+    '<p>By signing below, I acknowledge that I have received, read, and agree to this Service Agreement, the Cancellation &amp; No-Show Policy, and the Consent for Aquatic OT Treatment.</p>'+
+    '<div class="doc-sig">Parent/Guardian signature: <span class="fill">[_______________________]</span> &nbsp; Printed name: <span class="fill">[_______________________]</span><br>Date: <span class="fill">[____/____/____]</span></div>'+
+  '</div>';
+}
+
+function docsSectionHtml(){
+  return '<div class="card" id="legalDocs" style="margin-top:16px">'+
+    '<h3 class="section-title">3. First-draft business documents</h3>'+
+    legalDisclaimer('These are first drafts written for THIS practice\'s specifics (private-pay, solo, ages 2–16, rented pool time, Friday sessions) — not templates adapted from talk-therapy practices. Have a business/healthcare attorney review all four before real use, especially the consent form\'s risk disclosures and the cancellation policy\'s fee language (enforceability of no-show fees varies).')+
+    '<div class="stack" style="gap:14px;margin-top:14px">'+
+      '<div class="card" style="background:var(--surface-alt);border-style:dashed">'+intakeFormHtml()+'</div>'+
+      '<div class="card" style="background:var(--surface-alt);border-style:dashed">'+consentFormHtml()+'</div>'+
+      '<div class="card" style="background:var(--surface-alt);border-style:dashed">'+cancellationPolicyHtml()+'</div>'+
+      '<div class="card" style="background:var(--surface-alt);border-style:dashed">'+serviceAgreementHtml()+'</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function viewLegal(){
+  return '' +
+  '<div class="view-head">'+
+    '<div class="view-eyebrow">Legal &amp; Launch Kit</div>'+
+    '<h1 class="view-title">The free/DIY equivalent of a paid "practice launch" course</h1>'+
+    '<p class="view-sub">EIN, entity structure, and first-draft business documents, all specific to a solo pediatric aquatic OT practice in California. Review, fill in the brackets, and get a CPA/attorney to sign off before anything here goes in front of a real client.</p>'+
+  '</div>'+
+  '<div class="card" style="margin-bottom:16px">'+
+    '<div class="toc-row">'+
+      '<a class="btn small" href="#legalEin">1. EIN walkthrough</a>'+
+      '<a class="btn small" href="#legalEntity">2. Entity structure checklist</a>'+
+      '<a class="btn small" href="#legalDocs">3. Business documents</a>'+
+    '</div>'+
+  '</div>'+
+  einSectionHtml()+
+  entitySectionHtml()+
+  docsSectionHtml();
+}
+
 /* ============================== VIEW: NOTES ============================== */
 
 function noteComposer(){
@@ -1329,7 +1615,7 @@ function viewNotes(){
 var VIEWS = {
   overview: viewOverview, roadmap: viewRoadmap, pool: viewPool, demand: viewDemand,
   referrals: viewReferrals, financial: viewFinancial, grid: viewGrid, stages: viewStages,
-  exit: viewExit, notes: viewNotes
+  exit: viewExit, legal: viewLegal, notes: viewNotes
 };
 
 var typingGuard = false;
