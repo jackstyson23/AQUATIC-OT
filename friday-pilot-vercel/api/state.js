@@ -20,7 +20,7 @@ const { createClient } = require("redis");
 
 const SECTIONS = [
   "weeks", "pool", "demand", "referrals", "notes",
-  "financial", "growth", "exitThreshold", "brainstorm"
+  "financial", "growth", "exitThreshold", "brainstorm", "legal"
 ];
 const KEY_PREFIX = "fridaypilot:";
 

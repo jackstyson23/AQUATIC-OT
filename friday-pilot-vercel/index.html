@@ -478,7 +478,7 @@ var FIN_FIELDS = [
   ["beachKidsComp","Beach Kids total comp / yr ($)"]
 ];
 
-var SECTIONS = ["weeks","pool","demand","referrals","notes","financial","growth","exitThreshold","brainstorm"];
+var SECTIONS = ["weeks","pool","demand","referrals","notes","financial","growth","exitThreshold","brainstorm","legal"];
 
 /* ============================== HELPERS ============================== */
 
@@ -586,7 +586,7 @@ try{ identity = localStorage.getItem("fp_identity") || ""; }catch(e){}
 
 var state = {
   weeks:{}, pool:[], demand:[], referrals:[], notes:[],
-  financial:null, growth:null, exitThreshold:null, brainstorm:null,
+  financial:null, growth:null, exitThreshold:null, brainstorm:null, legal:null,
   openWeek: null
 };
 
@@ -606,6 +606,8 @@ function applySection(name, raw){
     state.exitThreshold = Object.assign({checks:EXIT_ITEMS.map(function(){return false;}), gut:null, gutNotes:""}, raw||{});
   } else if(name==="brainstorm"){
     state.brainstorm = Object.assign({text:""}, raw||{});
+  } else if(name==="legal"){
+    state.legal = Object.assign({checks:{}}, raw||{});
   }
 }
 function toMap(arr){
@@ -1010,6 +1012,7 @@ function entryFooter(e){
   return '<div class="notes-byline" style="margin-top:8px">'+lines.join(" · ")+'</div>';
 }
 var editingEntry = null; // {kind, id} of the entry currently being edited, or null
+var legalOpenState = {ein:true}; // which Legal & Launch Kit cards/docs are expanded (UI-only, not synced)
 function entryEditFormHtml(kind, e){
   return '<div class="log-entry" style="border-color:var(--accent);border-width:1.5px">'+
     fieldsFor(kind, "e_"+e.id+"_", e)+
@@ -1287,83 +1290,97 @@ function legalDisclaimer(text){
   return '<div class="decision-flag"><span>⚑</span><span>'+text+'</span></div>';
 }
 
-function einSectionHtml(){
-  return '<div class="card" id="legalEin">'+
-    '<h3 class="section-title">1. Get an EIN — free, direct from the IRS</h3>'+
-    '<div class="prose" style="margin-top:10px">'+
-      '<p>An EIN (Employer Identification Number) is the business\'s own tax ID number. Even solo and private-pay, it\'s worth getting one so a business bank account, client paperwork, and (later) an S-corp payroll setup never need to use her personal Social Security Number. It is <b>free</b> straight from the IRS — anything that charges $50–300 "to file your EIN" is a paid middleman for a form that costs nothing.</p>'+
-      '<h5>Before you start</h5>'+
-      '<ul>'+
-        '<li><b>Decide the entity type first</b> (sole proprietorship vs. the Professional OT Corporation — see Section 2). The application asks for this up front and branches differently depending on the answer.'+
-          '<ul><li>Forming the Professional Corp: file the Articles of Incorporation with the CA Secretary of State first and get it approved/file-stamped — the EIN application will ask for the corporation\'s exact legal name and formation date.</li>'+
-          '<li>Starting sole proprietor: nothing to file first — the legal name on the application is just her own legal name.</li></ul>'+
-        '</li>'+
-        '<li>Her Social Security Number (she is the "responsible party" on the application).</li>'+
-        '<li>The business\'s legal name, and a working/DBA name if it\'s different.</li>'+
-        '<li>A physical U.S. mailing address (home address is fine; a PO box only works as a secondary mailing address, not the physical address).</li>'+
-        '<li>The date the business started or will start.</li>'+
-        '<li>A one-line description of the business for the "principal activity" question — e.g. "outpatient occupational therapy services."</li>'+
-      '</ul>'+
-      '<h5>Apply online (irs.gov)</h5>'+
-      '<ol>'+
-        '<li>Go directly to <b>irs.gov</b> and search "Apply for an EIN Online" (or navigate to the IRS\'s own EIN Assistant). Only use the actual irs.gov domain.</li>'+
-        '<li>The online assistant is only available <b>Monday–Friday, 7:00 a.m.–10:00 p.m. Eastern time</b>.</li>'+
-        '<li>Select entity type — Sole Proprietor or Corporation, matching whatever Section 2 lands on.</li>'+
-        '<li>Enter the responsible party\'s info — her legal name and SSN.</li>'+
-        '<li>Enter the business\'s legal name, mailing address, and physical address.</li>'+
-        '<li>Enter the start date and reason for applying ("Started a new business").</li>'+
-        '<li>Answer the principal-activity questions — the closest standard category is generally <span class="fill">Health Care and Social Assistance → Offices of Physical, Occupational and Speech Therapists (NAICS 621340)</span>.</li>'+
-        '<li>Review the summary screen for typos before submitting — it can\'t be edited after issuance without contacting the IRS directly.</li>'+
-        '<li>The EIN is issued <b>immediately</b>, and the confirmation letter (CP 575) can be downloaded as a PDF right there on the confirmation page.</li>'+
-      '</ol>'+
-      '<h5>Timing &amp; gotchas</h5>'+
-      '<ul>'+
-        '<li>Total time if everything above is ready: about 15–20 minutes.</li>'+
-        '<li>The session <b>times out after ~15 minutes of inactivity</b> — have every answer ready before starting.</li>'+
-        '<li><b>Download and save the CP 575 PDF immediately.</b> The IRS doesn\'t email it, and it can\'t be re-downloaded later from that session — losing it means calling the IRS Business &amp; Specialty Tax line to get proof of the EIN reissued.</li>'+
-        '<li>Only one EIN per responsible party per day — relevant only if applying for more than one entity.</li>'+
-        '<li>If she starts as a sole proprietor and later incorporates the Professional Corp, the corporation is a <b>new legal entity</b> — plan on a second EIN application at that time; the sole-prop EIN doesn\'t transfer.</li>'+
-      '</ul>'+
+var LEGAL_LINKS = {
+  einApply: "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
+  form2553: "https://www.irs.gov/forms-pubs/about-form-2553",
+  caBizfile: "https://bizfileonline.sos.ca.gov/",
+  caBOT: "https://www.bot.ca.gov/"
+};
+function extLinkBtn(url,label){
+  return '<a class="btn small primary" href="'+url+'" target="_blank" rel="noopener">'+esc(label)+' ↗</a>';
+}
+
+var LEGAL_EIN_STEPS = [
+  {id:"ein_entity", text:"Decide the entity type first (sole prop vs. Professional OT Corp — Card 2) — the EIN form branches on this."},
+  {id:"ein_ready", text:"Have ready: her SSN, the business's legal name, a physical U.S. address, and a start date."},
+  {id:"ein_apply", text:"Apply Mon–Fri, 7am–10pm ET at irs.gov/ein — takes 15–20 min, free, EIN issued immediately."},
+  {id:"ein_naics", text:'Principal activity: "Offices of Physical, Occupational and Speech Therapists" (NAICS 621340).'},
+  {id:"ein_save", text:"Download & save the CP 575 confirmation PDF the second it appears — it can't be re-downloaded later."},
+  {id:"ein_newcorp", text:"Incorporating the Professional Corp later means a second EIN — the sole-prop one doesn't carry over."}
+];
+
+var LEGAL_ENTITY_A = [
+  'Required for practicing OT through an entity in CA — the <b>Moscone-Knox Act</b> (Corp. Code §13401(b)) covers OT.',
+  'Every shareholder / officer / director must be a licensed OT (solo = her, in all three roles).',
+  'Can elect federal <b>S-corp</b> tax treatment (Form 2553) — but CA still charges $800 min. franchise tax either way.',
+  'Stronger business-debt protection, but does <b>not</b> shield her from her own malpractice liability.'
+];
+var LEGAL_ENTITY_B = [
+  'No filing with the CA Secretary of State — just her own legal name (or a filed DBA).',
+  'What Heidi and most solo practices actually start with (see Week 2 notes on the Roadmap tab).',
+  'Simpler taxes: Schedule C, no payroll — full net profit hits self-employment tax.',
+  'Converting to the Professional Corp later is normal — doesn\'t have to be the day-one call.'
+];
+var LEGAL_ENTITY_QUESTIONS = [
+  {id:"eq_name", who:"Attorney", text:"Confirm the required corporate name form + check name availability before filing."},
+  {id:"eq_roles", who:"Attorney", text:"Confirm shareholder/officer/director rules for a solo OT corp."},
+  {id:"eq_botreg", who:"Attorney", text:"Ask about the separate CA Board of OT registration + its deadline after incorporating."},
+  {id:"eq_liability", who:"Attorney", text:"Ask directly whether incorporating changes her personal malpractice liability exposure."},
+  {id:"eq_scorp", who:"CPA", text:"Confirm S-corp election (Form 2553) timing, and whether it's worth it yet at pilot volume."},
+  {id:"eq_franchise", who:"CPA", text:"Get real numbers on CA's $800 min. franchise tax / 1.5% net income, even with S-corp election."}
+];
+
+function legalStepList(items, extraClass){
+  return '<ul class="task-list'+(extraClass?" "+extraClass:"")+'">'+items.map(function(it){
+    var checked = !!(state.legal && state.legal.checks && state.legal.checks[it.id]);
+    var whoTag = it.who ? '<span class="pill notstarted" style="margin-left:7px;flex:none">'+esc(it.who)+'</span>' : '';
+    return '<li class="task-item'+(checked?" done":"")+'" style="align-items:center">'+
+      '<input type="checkbox" data-action="legalCheck" data-id="'+it.id+'" '+(checked?"checked":"")+'>'+
+      '<label style="flex:1">'+it.text+'</label>'+whoTag+
+    '</li>';
+  }).join("")+'</ul>';
+}
+function legalStepsDone(items){
+  return items.filter(function(it){ return state.legal && state.legal.checks && state.legal.checks[it.id]; }).length;
+}
+function legalCollapseCard(key, num, title, blurb, headExtra, bodyHtml){
+  var open = !!legalOpenState[key];
+  return '<div class="week-card'+(open?" open":"")+'" id="legal_'+key+'">'+
+    '<div class="week-head" data-action="toggleLegalSection" data-key="'+key+'">'+
+      '<div class="week-num">'+num+'</div>'+
+      '<div class="week-head-title"><b>'+esc(title)+'</b><div class="helptext" style="margin-top:2px">'+blurb+'</div></div>'+
+      (headExtra||'')+
+      '<svg class="chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
     '</div>'+
+    '<div class="week-body">'+bodyHtml+'</div>'+
   '</div>';
 }
 
+function einSectionHtml(){
+  var done = legalStepsDone(LEGAL_EIN_STEPS);
+  var badge = '<span class="pill '+(done===LEGAL_EIN_STEPS.length?"complete":done?"progress":"notstarted")+'" style="flex:none;margin-right:10px">'+done+' / '+LEGAL_EIN_STEPS.length+'</span>';
+  return legalCollapseCard("ein","1","Get an EIN","Free, ~15–20 minutes, direct from the IRS.",badge,
+    '<div style="margin:14px 0">'+extLinkBtn(LEGAL_LINKS.einApply,"Apply at irs.gov")+'</div>'+
+    legalStepList(LEGAL_EIN_STEPS)+
+    '<p class="helptext" style="margin-top:10px">Anything that charges $50–300 "to file your EIN" is a paid middleman for a form the IRS gives away free.</p>'
+  );
+}
+
 function entitySectionHtml(){
-  return '<div class="card" id="legalEntity" style="margin-top:16px">'+
-    '<h3 class="section-title">2. Entity structure — checklist for the CPA &amp; business attorney</h3>'+
-    legalDisclaimer('Not legal or tax advice. This is background to make those two conversations more efficient — actual formation should go through a CA business attorney (Articles of Incorporation, bylaws, share issuance) and a CPA (tax election, payroll setup).')+
-    '<div class="prose" style="margin-top:10px">'+
-      '<h5>Option A — California Professional Occupational Therapy Corporation</h5>'+
-      '<p>California doesn\'t allow OTs to run their clinical practice through an ordinary LLC or plain corporation. Occupational therapy is one of the licensed professions covered by the <b>Moscone-Knox Professional Corporation Act</b> (Corp. Code §13400 et seq., with OT among the professions listed in §13401(b)) — practicing through an entity means forming a professional corporation specific to the license, with profession-specific rules layered on top of ordinary corporate law.</p>'+
-      '<p><b>Questions/prep for the attorney:</b></p>'+
-      '<ul>'+
-        '<li>Confirm the exact required name form for an OT professional corporation (e.g. must include "Occupational Therapy Corporation" or an approved abbreviation) and check name availability with the CA Secretary of State before filing.</li>'+
-        '<li>File the Articles of Incorporation with the CA Secretary of State under that confirmed name.</li>'+
-        '<li>Confirm every shareholder, officer, and director must be a licensed OT (solo practice = her in all three roles) — ask what the plan is if that ever changes.</li>'+
-        '<li>Ask whether/how the corporation must also register with the <b>California Board of Occupational Therapy</b> separately from the Secretary of State filing, and the deadline for doing so after incorporating.</li>'+
-        '<li>Set up a registered agent (herself, a commercial registered-agent service, or the attorney\'s office).</li>'+
-        '<li>Confirm the ongoing filing cadence (Statement of Information, franchise tax) and put the actual dates on a calendar.</li>'+
-        '<li>Ask directly: does incorporating change her <i>personal</i> liability exposure for clinical negligence? For licensed professionals, incorporating generally shields against general business debts/contracts but typically does <b>not</b> shield the treating clinician from her own malpractice liability — professional liability insurance is what actually covers that, corp or no corp.</li>'+
-      '</ul>'+
-      '<p><b>Questions/prep for the CPA — S-corp tax election:</b></p>'+
-      '<ul>'+
-        '<li>Confirm the Professional Corporation should elect federal S-corp tax treatment (Form 2553) rather than default C-corp taxation, and the filing deadline (generally within 2 months and 15 days of the election\'s effective date).</li>'+
-        '<li>Ask how S-corp payroll actually works day to day: as owner, she\'d be paid a "reasonable salary" as her own W-2 employee <b>through a payroll service</b>, not self-administered, with remaining profit distributed separately.</li>'+
-        '<li>Ask about California\'s own treatment of S-corps: CA still charges the greater of an <b>$800 minimum annual franchise tax</b> or <b>1.5% of net income</b> at the entity level, even after the federal S-corp election — get real numbers at her projected income before assuming a big tax win.</li>'+
-        '<li>Ask at what revenue level the S-corp/payroll complexity actually starts saving more in self-employment tax than it costs in payroll-service and extra tax-prep fees — at Friday-only pilot volume this is not automatically worth it.</li>'+
-      '</ul>'+
-      '<h5>Option B — Sole proprietorship (lower-cost starting point)</h5>'+
-      '<p>The cheaper, simpler way to start — and what Heidi (see Week 2\'s conversation notes on the Roadmap tab) and many solo practices actually do first, converting to the Professional Corp later once volume and liability profile justify the cost.</p>'+
-      '<ul>'+
-        '<li>No filing with the CA Secretary of State — she operates under her own legal name, or a filed Fictitious Business Name (DBA) if using a different practice name (filed with the county; most CA counties also require a newspaper-publication step).</li>'+
-        '<li>Still get an EIN (Section 1) so client-facing paperwork uses the EIN instead of her SSN.</li>'+
-        '<li>Still needs professional liability insurance regardless of entity — the license, not the entity, is what carries clinical risk.</li>'+
-        '<li>Simpler taxes: income/expenses reported on Schedule C of her personal return, no payroll to run, full net profit subject to self-employment tax (the exact cost the S-corp election above is meant to reduce, once volume justifies switching).</li>'+
-        '<li>Full personal liability for business debts and contracts (not clinical malpractice, which is personal either way) — worth weighing once she\'s signing a pool-rental contract or other agreements in the business\'s name.</li>'+
-        '<li>Converting to the Professional Corp later is a normal, common move — it doesn\'t have to be the day-one decision.</li>'+
-      '</ul>'+
+  var done = legalStepsDone(LEGAL_ENTITY_QUESTIONS);
+  var badge = '<span class="pill '+(done===LEGAL_ENTITY_QUESTIONS.length?"complete":done?"progress":"notstarted")+'" style="flex:none;margin-right:10px">'+done+' / '+LEGAL_ENTITY_QUESTIONS.length+'</span>';
+  return legalCollapseCard("entity","2","Choose an entity structure","Bring this to a CPA + business attorney before filing anything.",badge,
+    legalDisclaimer('Not legal or tax advice — background to make those two conversations faster, not a substitute for them.')+
+    '<div class="grid-2" style="margin:14px 0">'+
+      '<div class="card" style="background:var(--surface-alt)"><b class="mono" style="font-size:11.5px;color:var(--accent);text-transform:uppercase">Option A</b><div style="font-weight:600;margin:2px 0 8px">CA Professional OT Corp</div>'+
+        '<ul class="prose" style="margin:0;padding-left:18px">'+LEGAL_ENTITY_A.map(function(t){return '<li style="margin-bottom:6px;font-size:12.5px">'+t+'</li>';}).join("")+'</ul></div>'+
+      '<div class="card" style="background:var(--surface-alt)"><b class="mono" style="font-size:11.5px;color:var(--accent);text-transform:uppercase">Option B</b><div style="font-weight:600;margin:2px 0 8px">Sole Proprietorship</div>'+
+        '<ul class="prose" style="margin:0;padding-left:18px">'+LEGAL_ENTITY_B.map(function(t){return '<li style="margin-bottom:6px;font-size:12.5px">'+t+'</li>';}).join("")+'</ul></div>'+
     '</div>'+
-  '</div>';
+    '<div class="wrap-gap" style="margin-bottom:14px">'+extLinkBtn(LEGAL_LINKS.caBizfile,"CA Secretary of State — bizfile")+extLinkBtn(LEGAL_LINKS.caBOT,"CA Board of Occupational Therapy")+extLinkBtn(LEGAL_LINKS.form2553,"IRS Form 2553 (S-corp election)")+'</div>'+
+    '<p class="helptext" style="margin-bottom:6px"><b>Questions to bring:</b></p>'+
+    legalStepList(LEGAL_ENTITY_QUESTIONS)
+  );
 }
 
 function intakeFormHtml(){
@@ -1518,36 +1535,60 @@ function serviceAgreementHtml(){
   '</div>';
 }
 
-function docsSectionHtml(){
-  return '<div class="card" id="legalDocs" style="margin-top:16px">'+
-    '<h3 class="section-title">3. First-draft business documents</h3>'+
-    legalDisclaimer('These are first drafts written for THIS practice\'s specifics (private-pay, solo, ages 2–16, rented pool time, Friday sessions) — not templates adapted from talk-therapy practices. Have a business/healthcare attorney review all four before real use, especially the consent form\'s risk disclosures and the cancellation policy\'s fee language (enforceability of no-show fees varies).')+
-    '<div class="stack" style="gap:14px;margin-top:14px">'+
-      '<div class="card" style="background:var(--surface-alt);border-style:dashed">'+intakeFormHtml()+'</div>'+
-      '<div class="card" style="background:var(--surface-alt);border-style:dashed">'+consentFormHtml()+'</div>'+
-      '<div class="card" style="background:var(--surface-alt);border-style:dashed">'+cancellationPolicyHtml()+'</div>'+
-      '<div class="card" style="background:var(--surface-alt);border-style:dashed">'+serviceAgreementHtml()+'</div>'+
-    '</div>'+
-  '</div>';
+var LEGAL_DOCS = [
+  {id:"intake", label:"New Client Intake Form", blurb:"Child info, aquatic-specific medical history, referral source, private-pay acknowledgment.", render:intakeFormHtml},
+  {id:"consent", label:"Treatment Consent Form", blurb:"Aquatic-specific risks, pool supervision, parent/guardian presence, photo/video consent.", render:consentFormHtml},
+  {id:"cancellation", label:"Cancellation / No-Show Policy", blurb:"Notice window, late fee, weather/facility exceptions, repeated no-show handling.", render:cancellationPolicyHtml},
+  {id:"agreement", label:"Service Agreement & Practice Policies", blurb:"Session logistics, fees, communication, records, ending services.", render:serviceAgreementHtml}
+];
+
+function docSectionHtml(){
+  var reviewedCount = LEGAL_DOCS.filter(function(d){ return state.legal && state.legal.checks && state.legal.checks["doc_"+d.id]; }).length;
+  var badge = '<span class="pill '+(reviewedCount===LEGAL_DOCS.length?"complete":reviewedCount?"progress":"notstarted")+'" style="flex:none;margin-right:10px">'+reviewedCount+' / '+LEGAL_DOCS.length+' reviewed</span>';
+  var docCards = LEGAL_DOCS.map(function(d){
+    var open = !!legalOpenState["doc_"+d.id];
+    var reviewed = !!(state.legal && state.legal.checks && state.legal.checks["doc_"+d.id]);
+    return '<div class="week-card'+(open?" open":"")+'">'+
+      '<div class="week-head" data-action="toggleLegalDoc" data-doc="'+d.id+'">'+
+        '<div class="week-head-title"><b>'+esc(d.label)+'</b><div class="helptext" style="margin-top:2px">'+esc(d.blurb)+'</div></div>'+
+        '<span class="pill '+(reviewed?"complete":"notstarted")+'" style="flex:none">'+(reviewed?"Reviewed":"Not reviewed")+'</span>'+
+        '<svg class="chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      '</div>'+
+      '<div class="week-body">'+
+        d.render()+
+        '<div class="task-item" style="margin-top:14px;align-items:center">'+
+          '<input type="checkbox" data-action="legalCheck" data-id="doc_'+d.id+'" '+(reviewed?"checked":"")+'>'+
+          '<label>Mark as reviewed with attorney/CPA</label>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join("");
+  return legalCollapseCard("docs","3","First-draft business documents","4 ready-to-edit drafts, one document at a time.",badge,
+    legalDisclaimer('Written for THIS practice\'s specifics, not adapted from talk-therapy templates — have a business/healthcare attorney review each before real use, especially the consent form\'s risk disclosures and the cancellation policy\'s fee language (enforceability of no-show fees varies).')+
+    '<div class="stack" style="gap:10px;margin-top:14px">'+docCards+'</div>'
+  );
 }
 
 function viewLegal(){
+  var totalSteps = LEGAL_EIN_STEPS.length + LEGAL_ENTITY_QUESTIONS.length + LEGAL_DOCS.length;
+  var doneSteps = legalStepsDone(LEGAL_EIN_STEPS) + legalStepsDone(LEGAL_ENTITY_QUESTIONS) +
+    LEGAL_DOCS.filter(function(d){ return state.legal && state.legal.checks && state.legal.checks["doc_"+d.id]; }).length;
   return '' +
   '<div class="view-head">'+
-    '<div class="view-eyebrow">Legal &amp; Launch Kit</div>'+
-    '<h1 class="view-title">The free/DIY equivalent of a paid "practice launch" course</h1>'+
-    '<p class="view-sub">EIN, entity structure, and first-draft business documents, all specific to a solo pediatric aquatic OT practice in California. Review, fill in the brackets, and get a CPA/attorney to sign off before anything here goes in front of a real client.</p>'+
-  '</div>'+
-  '<div class="card" style="margin-bottom:16px">'+
-    '<div class="toc-row">'+
-      '<a class="btn small" href="#legalEin">1. EIN walkthrough</a>'+
-      '<a class="btn small" href="#legalEntity">2. Entity structure checklist</a>'+
-      '<a class="btn small" href="#legalDocs">3. Business documents</a>'+
+    '<div class="flex-between">'+
+      '<div>'+
+        '<div class="view-eyebrow">Legal &amp; Launch Kit</div>'+
+        '<h1 class="view-title">The free/DIY equivalent of a paid "practice launch" course</h1>'+
+      '</div>'+
+      '<span class="pill '+(doneSteps===totalSteps?"complete":doneSteps?"progress":"notstarted")+'" style="flex:none;font-size:13px;padding:6px 14px">'+doneSteps+' / '+totalSteps+' steps done</span>'+
     '</div>'+
+    '<p class="view-sub">Three bite-sized cards — click a header to expand it, check things off as you go. Fill in the brackets in the documents and get a CPA/attorney to sign off before anything here goes in front of a real client.</p>'+
   '</div>'+
-  einSectionHtml()+
-  entitySectionHtml()+
-  docsSectionHtml();
+  '<div class="stack" style="gap:12px">'+
+    einSectionHtml()+
+    entitySectionHtml()+
+    docSectionHtml()+
+  '</div>';
 }
 
 /* ============================== VIEW: NOTES ============================== */
@@ -1675,6 +1716,18 @@ content.addEventListener("click", function(e){
     renderView();
     return;
   }
+  if((t = e.target.closest('[data-action="toggleLegalSection"]'))){
+    var lkey = t.getAttribute("data-key");
+    legalOpenState[lkey] = !legalOpenState[lkey];
+    renderView();
+    return;
+  }
+  if((t = e.target.closest('[data-action="toggleLegalDoc"]'))){
+    var dkey = "doc_"+t.getAttribute("data-doc");
+    legalOpenState[dkey] = !legalOpenState[dkey];
+    renderView();
+    return;
+  }
   if((t = e.target.closest('[data-action="setStage"]'))){
     var stage = parseInt(t.getAttribute("data-stage"),10);
     mutateSection("growth", function(fresh){ return Object.assign({stage:1,notes:""}, fresh||{}, {stage:stage}); });
@@ -1792,6 +1845,15 @@ content.addEventListener("change", function(e){
     mutateSection("exitThreshold", function(fresh){
       var base = Object.assign({checks:EXIT_ITEMS.map(function(){return false;}), gut:null, gutNotes:""}, fresh||{});
       var checks = base.checks.slice(); checks[idx2] = checked2;
+      return Object.assign({}, base, {checks:checks});
+    });
+    return;
+  }
+  if(t.matches('[data-action="legalCheck"]')){
+    var lid = t.getAttribute("data-id"), lchecked = t.checked;
+    mutateSection("legal", function(fresh){
+      var base = Object.assign({checks:{}}, fresh||{});
+      var checks = Object.assign({}, base.checks); checks[lid] = lchecked;
       return Object.assign({}, base, {checks:checks});
     });
     return;
