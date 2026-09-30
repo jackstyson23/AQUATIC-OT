@@ -1365,7 +1365,8 @@ function einSectionHtml(){
   return legalCollapseCard("ein","1","Get an EIN","Free, ~15–20 minutes, direct from the IRS.",badge,
     '<div style="margin:14px 0">'+extLinkBtn(LEGAL_LINKS.einApply,"Apply at irs.gov")+'</div>'+
     legalStepList(LEGAL_EIN_STEPS)+
-    '<p class="helptext" style="margin-top:10px">Anything that charges $50–300 "to file your EIN" is a paid middleman for a form the IRS gives away free.</p>'
+    '<p class="helptext" style="margin-top:10px">Anything that charges $50–300 "to file your EIN" is a paid middleman for a form the IRS gives away free.</p>'+
+    legalNotesBlock("ein","Get an EIN")
   );
 }
 
@@ -1391,7 +1392,8 @@ function entitySectionHtml(){
     '</div>'+
     '<div class="wrap-gap" style="margin-bottom:14px">'+extLinkBtn(LEGAL_LINKS.caBizfile,"CA Secretary of State — bizfile")+extLinkBtn(LEGAL_LINKS.caBOT,"CA Board of Occupational Therapy")+extLinkBtn(LEGAL_LINKS.form2553,"IRS Form 2553 (S-corp election)")+'</div>'+
     '<p class="helptext" style="margin-bottom:6px"><b>Questions to bring:</b></p>'+
-    legalStepList(LEGAL_ENTITY_QUESTIONS)
+    legalStepList(LEGAL_ENTITY_QUESTIONS)+
+    legalNotesBlock("entity","Choose an entity structure")
   );
 }
 
@@ -1870,6 +1872,18 @@ var CLINICAL_TEMPLATES = [
   {id:"incident", label:"Incident Report", blurb:"Falls, water incidents, seizures, or any injury/near-miss — what happened, action taken, parent notification.", render:incidentReportHtml}
 ];
 
+function legalNotesBlock(key, label){
+  var noteRec = (state.legal && state.legal.notes && state.legal.notes[key]) || {};
+  return '<div class="week-notes" style="margin-top:16px">'+
+    '<label class="field-label">Notes — what needs fixing <span class="save-hint" id="saveHint_legalnote_'+key+'"></span></label>'+
+    '<textarea class="field editable" data-action="legalNote" data-key="'+key+'" data-label="'+esc(label)+'" placeholder="Anything to change before this is final... (Enter publishes to the Notes tab, Shift+Enter for a new line)">'+esc(noteRec.text||"")+'</textarea>'+
+    (noteRec.by ? '<div class="notes-byline">Last edited by '+esc(noteRec.by)+(noteRec.at?" · "+timeAgo(noteRec.at):"")+'</div>' : '')+
+    '<div style="margin-top:8px;text-align:right">'+
+      '<button class="btn small primary" data-action="publishLegalNote" data-key="'+key+'" data-label="'+esc(label)+'" '+(identity?"":"disabled")+' title="'+(identity?"Post this note to the Notes tab":"Set your name in the sidebar first")+'">Publish to Notes →</button>'+
+    '</div>'+
+  '</div>';
+}
+
 function legalDocGroupHtml(sectionKey, num, title, blurb, disclaimerText, docs, checkboxLabel){
   var doneCount = docs.filter(function(d){ return state.legal && state.legal.checks && state.legal.checks[sectionKey+"_"+d.id]; }).length;
   var badge = '<span class="pill '+(doneCount===docs.length?"complete":doneCount?"progress":"notstarted")+'" style="flex:none;margin-right:10px">'+doneCount+' / '+docs.length+'</span>';
@@ -1877,7 +1891,6 @@ function legalDocGroupHtml(sectionKey, num, title, blurb, disclaimerText, docs, 
     var checkKey = sectionKey+"_"+d.id;
     var open = !!legalOpenState["doc_"+checkKey];
     var done = !!(state.legal && state.legal.checks && state.legal.checks[checkKey]);
-    var noteRec = (state.legal && state.legal.notes && state.legal.notes[checkKey]) || {};
     return '<div class="week-card'+(open?" open":"")+'">'+
       '<div class="week-head" data-action="toggleLegalDoc" data-doc="'+checkKey+'">'+
         '<div class="week-head-title"><b>'+esc(d.label)+'</b><div class="helptext" style="margin-top:2px">'+esc(d.blurb)+'</div></div>'+
@@ -1890,14 +1903,7 @@ function legalDocGroupHtml(sectionKey, num, title, blurb, disclaimerText, docs, 
           '<input type="checkbox" data-action="legalCheck" data-id="'+checkKey+'" '+(done?"checked":"")+'>'+
           '<label>'+esc(checkboxLabel)+'</label>'+
         '</div>'+
-        '<div class="week-notes">'+
-          '<label class="field-label">Notes — what needs fixing <span class="save-hint" id="saveHint_legalnote_'+checkKey+'"></span></label>'+
-          '<textarea class="field editable" data-action="legalNote" data-key="'+checkKey+'" data-label="'+esc(d.label)+'" placeholder="Anything to change before this is final... (Enter publishes to the Notes tab, Shift+Enter for a new line)">'+esc(noteRec.text||"")+'</textarea>'+
-          (noteRec.by ? '<div class="notes-byline">Last edited by '+esc(noteRec.by)+(noteRec.at?" · "+timeAgo(noteRec.at):"")+'</div>' : '')+
-          '<div style="margin-top:8px;text-align:right">'+
-            '<button class="btn small primary" data-action="publishLegalNote" data-key="'+checkKey+'" data-label="'+esc(d.label)+'" '+(identity?"":"disabled")+' title="'+(identity?"Post this note to the Notes tab":"Set your name in the sidebar first")+'">Publish to Notes →</button>'+
-          '</div>'+
-        '</div>'+
+        legalNotesBlock(checkKey, d.label)+
       '</div>'+
     '</div>';
   }).join("");
