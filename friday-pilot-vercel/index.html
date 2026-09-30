@@ -1374,6 +1374,15 @@ function entitySectionHtml(){
   var badge = '<span class="pill '+(done===LEGAL_ENTITY_QUESTIONS.length?"complete":done?"progress":"notstarted")+'" style="flex:none;margin-right:10px">'+done+' / '+LEGAL_ENTITY_QUESTIONS.length+'</span>';
   return legalCollapseCard("entity","2","Choose an entity structure","Bring this to a CPA + business attorney before filing anything.",badge,
     legalDisclaimer('Not legal or tax advice — background to make those two conversations faster, not a substitute for them.')+
+    '<div class="card" style="background:var(--surface-alt);margin:14px 0"><b style="font-size:12.5px">If going the Professional Corp + S-corp route, the order is:</b>'+
+      '<ol class="prose" style="margin:8px 0 0;padding-left:20px">'+
+        '<li style="margin-bottom:5px">Form the CA Professional OT Corporation — Articles of Incorporation with the CA Secretary of State.</li>'+
+        '<li style="margin-bottom:5px">Get the EIN for that corp (Form 2553 requires it).</li>'+
+        '<li style="margin-bottom:5px">File Form 2553 (S-corp election) — within 2 months + 15 days of the corp\'s formation date.</li>'+
+        '<li>Bylaws, board/officers, bank account, and the initial Statement of Information.</li>'+
+      '</ol>'+
+      '<p class="helptext" style="margin-top:8px">Steps 1 and 3 should go through the attorney/CPA, not be self-filed.</p>'+
+    '</div>'+
     '<div class="grid-2" style="margin:14px 0">'+
       '<div class="card" style="background:var(--surface-alt)"><b class="mono" style="font-size:11.5px;color:var(--accent);text-transform:uppercase">Option A</b><div style="font-weight:600;margin:2px 0 8px">CA Professional OT Corp</div>'+
         '<ul class="prose" style="margin:0;padding-left:18px">'+LEGAL_ENTITY_A.map(function(t){return '<li style="margin-bottom:6px;font-size:12.5px">'+t+'</li>';}).join("")+'</ul></div>'+
@@ -1569,11 +1578,36 @@ function serviceAgreementHtml(){
   '</div>';
 }
 
+function photoReleaseHtml(){
+  return '<div class="prose">'+
+    '<div class="doc-eyebrow">Draft — for review</div>'+
+    '<div class="doc-title">'+fillField("practiceName")+' — Photo, Video &amp; Testimonial Release (Optional)</div>'+
+    '<p class="helptext" style="margin-bottom:14px">Separate from and optional beyond the Consent for Aquatic OT Treatment, which only covers photos/video for clinical documentation. This release is for marketing use only — signing it is never required to receive treatment.</p>'+
+    '<h5>Permission</h5>'+
+    '<p>I give permission for '+fillField("practiceName")+' to use photos and/or video of my child taken during sessions for the following purposes (check all that apply):</p>'+
+    '<ul>'+
+      '<li>☐ Practice website</li>'+
+      '<li>☐ Social media (Instagram, Facebook, etc.)</li>'+
+      '<li>☐ Printed marketing materials (flyers, brochures)</li>'+
+      '<li>☐ Written testimonials/quotes attributed to our family (first name only, no other identifying details)</li>'+
+    '</ul>'+
+    '<h5>What This Means</h5>'+
+    '<ul>'+
+      '<li>This permission is entirely optional — declining does not affect treatment in any way.</li>'+
+      '<li>My child\'s face may be visible; images will never be paired with diagnosis, treatment goals, or other health information.</li>'+
+      '<li>I may revoke this permission in writing at any time; images already posted or printed may not be fully retrievable.</li>'+
+      '<li>No compensation is provided for use of these images.</li>'+
+    '</ul>'+
+    '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Relationship to child: '+blank(90)+' &nbsp; Date: '+blank(90)+'</div>'+
+  '</div>';
+}
+
 var LEGAL_DOCS = [
   {id:"intake", label:"New Client Intake Form", blurb:"Child info, aquatic-specific medical history, referral source, private-pay acknowledgment.", render:intakeFormHtml},
   {id:"consent", label:"Treatment Consent Form", blurb:"Aquatic-specific risks, pool supervision, parent/guardian presence, photo/video consent.", render:consentFormHtml},
   {id:"cancellation", label:"Cancellation / No-Show Policy", blurb:"Notice window, late fee, weather/facility exceptions, repeated no-show handling.", render:cancellationPolicyHtml},
-  {id:"agreement", label:"Service Agreement & Practice Policies", blurb:"Session logistics, fees, communication, records, ending services.", render:serviceAgreementHtml}
+  {id:"agreement", label:"Service Agreement & Practice Policies", blurb:"Session logistics, fees, communication, records, ending services.", render:serviceAgreementHtml},
+  {id:"photoRelease", label:"Photo, Video & Testimonial Release", blurb:"Optional, separate from clinical consent — website/social/testimonial use, revocable any time.", render:photoReleaseHtml}
 ];
 
 function docSectionHtml(){
@@ -1597,7 +1631,7 @@ function docSectionHtml(){
       '</div>'+
     '</div>';
   }).join("");
-  return legalCollapseCard("docs","3","First-draft business documents","4 ready-to-edit drafts, one document at a time.",badge,
+  return legalCollapseCard("docs","3","First-draft business documents",LEGAL_DOCS.length+" ready-to-edit drafts, one document at a time.",badge,
     legalDisclaimer('Written for THIS practice\'s specifics, not adapted from talk-therapy templates — have a business/healthcare attorney review each before real use, especially the consent form\'s risk disclosures and the cancellation policy\'s fee language (enforceability of no-show fees varies).')+
     '<div class="stack" style="gap:10px;margin-top:14px">'+docCards+'</div>'
   );
