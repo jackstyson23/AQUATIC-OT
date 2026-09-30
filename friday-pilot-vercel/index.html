@@ -1892,7 +1892,7 @@ function legalDocGroupHtml(sectionKey, num, title, blurb, disclaimerText, docs, 
         '</div>'+
         '<div class="week-notes">'+
           '<label class="field-label">Notes — what needs fixing <span class="save-hint" id="saveHint_legalnote_'+checkKey+'"></span></label>'+
-          '<textarea class="field editable" data-action="legalNote" data-key="'+checkKey+'" placeholder="Anything to change before this is final... (Enter saves right away)">'+esc(noteRec.text||"")+'</textarea>'+
+          '<textarea class="field editable" data-action="legalNote" data-key="'+checkKey+'" data-label="'+esc(d.label)+'" placeholder="Anything to change before this is final... (Enter publishes to the Notes tab, Shift+Enter for a new line)">'+esc(noteRec.text||"")+'</textarea>'+
           (noteRec.by ? '<div class="notes-byline">Last edited by '+esc(noteRec.by)+(noteRec.at?" · "+timeAgo(noteRec.at):"")+'</div>' : '')+
           '<div style="margin-top:8px;text-align:right">'+
             '<button class="btn small primary" data-action="publishLegalNote" data-key="'+checkKey+'" data-label="'+esc(d.label)+'" '+(identity?"":"disabled")+' title="'+(identity?"Post this note to the Notes tab":"Set your name in the sidebar first")+'">Publish to Notes →</button>'+
@@ -2062,6 +2062,12 @@ document.getElementById("identityRow").addEventListener("click", function(e){
 var content = document.getElementById("content");
 
 content.addEventListener("click", function(e){
+  // Clicking anything that isn't itself a text-entry field means the user is
+  // done editing (even if a focusout was ever missed) — safe to release the
+  // guard so this click's own UI update actually renders. If the click IS
+  // entering a guarded field, its own focusin already set the guard true;
+  // leave that alone.
+  if(!isGuardedField(e.target)) typingGuard = false;
   var t;
   if((t = e.target.closest('[data-action="toggleWeek"]'))){
     var n = parseInt(t.getAttribute("data-week"),10);
@@ -2168,6 +2174,11 @@ content.addEventListener("click", function(e){
 
 content.addEventListener("change", function(e){
   var t = e.target;
+  // A "change" event only fires once a field's value is actually committed
+  // (checkbox toggled, select picked, number input blurred) — safe to
+  // release a possibly-stuck guard here too, same reasoning as the click
+  // listener above.
+  if(!isGuardedField(t) || t.tagName==="SELECT") typingGuard = false;
   if(t.matches('[data-action="toggleTask"]')){
     var n = parseInt(t.getAttribute("data-week"),10), idx = parseInt(t.getAttribute("data-idx"),10);
     var checked = t.checked;
@@ -2347,6 +2358,13 @@ content.addEventListener("keydown", function(e){
     saveEditedNote(t.getAttribute("data-id"));
     return;
   }
+  if(t.matches('[data-action="legalNote"]') && e.key==="Enter" && !e.shiftKey){
+    // Unlike the long-form note fields below, this one's Enter behaves like
+    // the main Notes composer: publish now, Shift+Enter for a new line.
+    e.preventDefault();
+    handlePublishLegalNote(t.getAttribute("data-key"), t.getAttribute("data-label"));
+    return;
+  }
   // Long-form note fields: Enter submits (saves immediately) without
   // blocking the newline it also inserts — so a multi-line note in
   // progress keeps saving as you go instead of waiting on the debounce.
@@ -2366,9 +2384,6 @@ content.addEventListener("keydown", function(e){
     } else if(t.matches('[data-action="gutNotes"]')){
       var gtField = t;
       setTimeout(function(){ saveGutNotes(gtField.value); flashSavedHint("saveHint_gut"); }, 0);
-    } else if(t.matches('[data-action="legalNote"]')){
-      var lnKey = t.getAttribute("data-key"), lnField = t;
-      setTimeout(function(){ saveLegalNote(lnKey, lnField.value); flashSavedHint("saveHint_legalnote_"+lnKey); }, 0);
     }
   }
 });
