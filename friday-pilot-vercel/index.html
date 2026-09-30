@@ -1874,12 +1874,24 @@ var CLINICAL_TEMPLATES = [
 
 function legalNotesBlock(key, label){
   var noteRec = (state.legal && state.legal.notes && state.legal.notes[key]) || {};
-  return '<div class="week-notes" style="margin-top:16px">'+
-    '<label class="field-label">Notes — what needs fixing <span class="save-hint" id="saveHint_legalnote_'+key+'"></span></label>'+
-    '<textarea class="field editable" data-action="legalNote" data-key="'+key+'" data-label="'+esc(label)+'" placeholder="Anything to change before this is final... (Enter publishes to the Notes tab, Shift+Enter for a new line)">'+esc(noteRec.text||"")+'</textarea>'+
-    (noteRec.by ? '<div class="notes-byline">Last edited by '+esc(noteRec.by)+(noteRec.at?" · "+timeAgo(noteRec.at):"")+'</div>' : '')+
-    '<div style="margin-top:8px;text-align:right">'+
-      '<button class="btn small primary" data-action="publishLegalNote" data-key="'+key+'" data-label="'+esc(label)+'" '+(identity?"":"disabled")+' title="'+(identity?"Post this note to the Notes tab":"Set your name in the sidebar first")+'">Publish to Notes →</button>'+
+  var open = !!legalOpenState["notes_"+key];
+  var hasText = !!(noteRec.text && noteRec.text.trim());
+  var head = '<div class="week-notes" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-soft)">'+
+    '<div data-action="toggleLegalNotes" data-key="'+key+'" style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;user-select:none">'+
+      '<label class="field-label" style="margin:0;cursor:pointer">Notes — what needs fixing'+
+        (hasText?' <span class="pill notstarted" style="font-size:10px;padding:1px 7px;margin-left:4px">has notes</span>':'')+
+        ' <span class="save-hint" id="saveHint_legalnote_'+key+'"></span>'+
+      '</label>'+
+      '<svg width="14" height="14" viewBox="0 0 16 16" style="flex:none;color:var(--text-faint);transition:transform .15s ease;'+(open?"transform:rotate(90deg)":"")+'"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+    '</div>';
+  if(!open) return head+'</div>';
+  return head+
+    '<div style="margin-top:10px">'+
+      '<textarea class="field editable" data-action="legalNote" data-key="'+key+'" data-label="'+esc(label)+'" placeholder="Anything to change before this is final... (Enter publishes to the Notes tab, Shift+Enter for a new line)">'+esc(noteRec.text||"")+'</textarea>'+
+      (noteRec.by ? '<div class="notes-byline">Last edited by '+esc(noteRec.by)+(noteRec.at?" · "+timeAgo(noteRec.at):"")+'</div>' : '')+
+      '<div style="margin-top:8px;text-align:right">'+
+        '<button class="btn small primary" data-action="publishLegalNote" data-key="'+key+'" data-label="'+esc(label)+'" '+(identity?"":"disabled")+' title="'+(identity?"Post this note to the Notes tab":"Set your name in the sidebar first")+'">Publish to Notes →</button>'+
+      '</div>'+
     '</div>'+
   '</div>';
 }
@@ -2095,6 +2107,12 @@ content.addEventListener("click", function(e){
   }
   if((t = e.target.closest('[data-action="publishLegalNote"]'))){
     handlePublishLegalNote(t.getAttribute("data-key"), t.getAttribute("data-label"));
+    return;
+  }
+  if((t = e.target.closest('[data-action="toggleLegalNotes"]'))){
+    var nkey = "notes_"+t.getAttribute("data-key");
+    legalOpenState[nkey] = !legalOpenState[nkey];
+    renderView();
     return;
   }
   if((t = e.target.closest('[data-action="setStage"]'))){
