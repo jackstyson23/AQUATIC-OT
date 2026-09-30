@@ -610,7 +610,7 @@ function applySection(name, raw){
   } else if(name==="brainstorm"){
     state.brainstorm = Object.assign({text:""}, raw||{});
   } else if(name==="legal"){
-    state.legal = Object.assign({checks:{}, fields:{}}, raw||{});
+    state.legal = Object.assign({checks:{}, fields:{}, notes:{}}, raw||{});
   }
 }
 function toMap(arr){
@@ -1877,6 +1877,7 @@ function legalDocGroupHtml(sectionKey, num, title, blurb, disclaimerText, docs, 
     var checkKey = sectionKey+"_"+d.id;
     var open = !!legalOpenState["doc_"+checkKey];
     var done = !!(state.legal && state.legal.checks && state.legal.checks[checkKey]);
+    var noteRec = (state.legal && state.legal.notes && state.legal.notes[checkKey]) || {};
     return '<div class="week-card'+(open?" open":"")+'">'+
       '<div class="week-head" data-action="toggleLegalDoc" data-doc="'+checkKey+'">'+
         '<div class="week-head-title"><b>'+esc(d.label)+'</b><div class="helptext" style="margin-top:2px">'+esc(d.blurb)+'</div></div>'+
@@ -1888,6 +1889,14 @@ function legalDocGroupHtml(sectionKey, num, title, blurb, disclaimerText, docs, 
         '<div class="task-item" style="margin-top:14px;align-items:center">'+
           '<input type="checkbox" data-action="legalCheck" data-id="'+checkKey+'" '+(done?"checked":"")+'>'+
           '<label>'+esc(checkboxLabel)+'</label>'+
+        '</div>'+
+        '<div class="week-notes">'+
+          '<label class="field-label">Notes — what needs fixing <span class="save-hint" id="saveHint_legalnote_'+checkKey+'"></span></label>'+
+          '<textarea class="field editable" data-action="legalNote" data-key="'+checkKey+'" placeholder="Anything to change before this is final... (Enter saves right away)">'+esc(noteRec.text||"")+'</textarea>'+
+          (noteRec.by ? '<div class="notes-byline">Last edited by '+esc(noteRec.by)+(noteRec.at?" · "+timeAgo(noteRec.at):"")+'</div>' : '')+
+          '<div style="margin-top:8px;text-align:right">'+
+            '<button class="btn small primary" data-action="publishLegalNote" data-key="'+checkKey+'" data-label="'+esc(d.label)+'" '+(identity?"":"disabled")+' title="'+(identity?"Post this note to the Notes tab":"Set your name in the sidebar first")+'">Publish to Notes →</button>'+
+          '</div>'+
         '</div>'+
       '</div>'+
     '</div>';
@@ -2070,6 +2079,10 @@ content.addEventListener("click", function(e){
     var dkey = "doc_"+t.getAttribute("data-doc");
     legalOpenState[dkey] = !legalOpenState[dkey];
     renderView();
+    return;
+  }
+  if((t = e.target.closest('[data-action="publishLegalNote"]'))){
+    handlePublishLegalNote(t.getAttribute("data-key"), t.getAttribute("data-label"));
     return;
   }
   if((t = e.target.closest('[data-action="setStage"]'))){
@@ -2266,7 +2279,7 @@ var debouncedGutNotes = debounce(saveGutNotes, 700);
 var legalFieldTimers = {};
 function saveLegalField(key, text){
   mutateSection("legal", function(fresh){
-    var base = Object.assign({checks:{}, fields:{}}, fresh||{});
+    var base = Object.assign({checks:{}, fields:{}, notes:{}}, fresh||{});
     var fields = Object.assign({}, base.fields); fields[key] = text;
     return Object.assign({}, base, {fields:fields});
   });
@@ -2276,6 +2289,35 @@ function debouncedLegalField(key, text){
   legalFieldTimers[key] = setTimeout(function(){ saveLegalField(key, text); }, 700);
 }
 
+var legalNoteTimers = {};
+function saveLegalNote(key, text){
+  mutateSection("legal", function(fresh){
+    var base = Object.assign({checks:{}, fields:{}, notes:{}}, fresh||{});
+    var notes = Object.assign({}, base.notes);
+    notes[key] = {text:text, by:identity||"Someone", at:new Date().toISOString()};
+    return Object.assign({}, base, {notes:notes});
+  });
+}
+function debouncedLegalNote(key, text){
+  clearTimeout(legalNoteTimers[key]);
+  legalNoteTimers[key] = setTimeout(function(){ saveLegalNote(key, text); }, 700);
+}
+function handlePublishLegalNote(key, label){
+  if(!identity) return;
+  var ta = document.querySelector('[data-action="legalNote"][data-key="'+key+'"]');
+  var text = ta ? ta.value.trim() : "";
+  if(!text) return;
+  clearTimeout(legalNoteTimers[key]);
+  saveLegalNote(key, text);
+  var id = genId();
+  mutateSection("notes", function(fresh){
+    var map = Object.assign({}, fresh||{});
+    map[id] = {author:identity, text:"["+label+"] "+text, createdAt:new Date().toISOString()};
+    return map;
+  });
+  flashSavedHint("saveHint_legalnote_"+key);
+}
+
 content.addEventListener("input", function(e){
   var t = e.target;
   if(t.matches('[data-action="weekNotes"]')) debouncedWeekNotes(parseInt(t.getAttribute("data-week"),10), t.value);
@@ -2283,6 +2325,7 @@ content.addEventListener("input", function(e){
   else if(t.matches('[data-action="growthNotes"]')) debouncedGrowthNotes(t.value);
   else if(t.matches('[data-action="gutNotes"]')) debouncedGutNotes(t.value);
   else if(t.matches('[data-action="legalField"]')) debouncedLegalField(t.getAttribute("data-field"), t.textContent);
+  else if(t.matches('[data-action="legalNote"]')) debouncedLegalNote(t.getAttribute("data-key"), t.value);
 });
 
 content.addEventListener("keydown", function(e){
@@ -2323,6 +2366,9 @@ content.addEventListener("keydown", function(e){
     } else if(t.matches('[data-action="gutNotes"]')){
       var gtField = t;
       setTimeout(function(){ saveGutNotes(gtField.value); flashSavedHint("saveHint_gut"); }, 0);
+    } else if(t.matches('[data-action="legalNote"]')){
+      var lnKey = t.getAttribute("data-key"), lnField = t;
+      setTimeout(function(){ saveLegalNote(lnKey, lnField.value); flashSavedHint("saveHint_legalnote_"+lnKey); }, 0);
     }
   }
 });
