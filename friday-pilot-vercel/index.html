@@ -270,6 +270,13 @@
   .prose .fill:focus{outline:2px solid var(--accent);outline-offset:1px;background:var(--surface)}
   .prose .blank-line{display:inline-block;border-bottom:1px solid var(--text-faint);vertical-align:baseline}
   .doc-sig{border-top:1px dashed var(--border);margin-top:16px;padding-top:14px;font-size:13px;color:var(--text-muted)}
+  .doc-subsec{margin:0 0 4px}
+  .doc-subsec-head{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;user-select:none;padding:6px 0}
+  .doc-subsec-head h5{margin:0}
+  .doc-subsec-head .chev{transition:transform .15s ease;color:var(--text-faint);flex:none}
+  .doc-subsec.open .doc-subsec-head .chev{transform:rotate(90deg)}
+  .doc-subsec-body{display:none;padding-bottom:8px}
+  .doc-subsec.open .doc-subsec-body{display:block}
   .doc-title{font-family:var(--font-display);font-weight:600;font-size:16.5px;color:var(--text);margin-bottom:2px}
   .doc-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700;margin-bottom:6px}
   .toc-row{display:flex;flex-wrap:wrap;gap:8px}
@@ -1427,110 +1434,131 @@ function fillField(key){
 }
 function blank(width){ return '<span class="blank-line" style="min-width:'+(width||90)+'px"></span>'; }
 
+// Every named heading inside a document is individually collapsible —
+// open by default (documents read top-to-bottom), toggle state is
+// per-document/per-section and UI-only (not synced), same as legalOpenState.
+function secIsOpen(key){
+  var k = "sec_"+key;
+  return legalOpenState.hasOwnProperty(k) ? legalOpenState[k] : true;
+}
+function docSec(docId, secId, heading, bodyHtml){
+  var key = docId+"__"+secId;
+  var open = secIsOpen(key);
+  return '<div class="doc-subsec'+(open?" open":"")+'">'+
+    '<div class="doc-subsec-head" data-action="toggleDocSec" data-secid="'+key+'">'+
+      '<h5>'+heading+'</h5>'+
+      '<svg class="chev" width="14" height="14" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+    '</div>'+
+    '<div class="doc-subsec-body">'+bodyHtml+'</div>'+
+  '</div>';
+}
+
 function intakeFormHtml(){
+  var d = "intake";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — New Client Intake Form</div>'+
     '<p class="helptext" style="margin-bottom:14px">Please complete before your child\'s first session, and return by '+fillField("intakeReturnMethod")+' or bring it to the first Friday session.</p>'+
-    '<h5>Child Information</h5>'+
-    '<ul><li>Child\'s full legal name</li><li>Date of birth</li><li>Age</li><li>Home address</li><li>Primary language spoken at home</li></ul>'+
-    '<h5>Parent / Guardian Information</h5>'+
-    '<ul>'+
-      '<li>Parent/Guardian 1 — name, relationship to child, phone, email</li>'+
-      '<li>Parent/Guardian 2 — name, relationship to child, phone, email (if applicable)</li>'+
-      '<li>Who has legal custody / legal authority to consent to treatment? <i>(please attach documentation if custody is not shared between both parents listed above)</i></li>'+
-      '<li>Emergency contact, if different from above — name, relationship, phone</li>'+
-    '</ul>'+
-    '<h5>Referral &amp; Reason for Seeking Services</h5>'+
-    '<ul>'+
-      '<li>How did you hear about '+fillField("practiceName")+'? (referring provider, pediatrician, school, word of mouth, other)</li>'+
-      '<li>Referring provider name &amp; contact, if applicable</li>'+
-      '<li>Primary concerns / reason for seeking OT, in your own words</li>'+
-      '<li>Current diagnoses, if any</li>'+
-    '</ul>'+
-    '<h5>Medical &amp; Safety History — Aquatic-Specific</h5>'+
-    '<p><i>This section is longer than a typical intake because sessions happen in a pool — please be thorough.</i></p>'+
-    '<ul>'+
-      '<li>Seizure history (type, frequency, last occurrence, known triggers)</li>'+
-      '<li>Cardiac or respiratory conditions</li>'+
-      '<li>Skin conditions, open wounds, or recent surgical sites</li>'+
-      '<li>Feeding tubes, shunts (e.g. VP shunt), catheters, or other medical devices</li>'+
-      '<li>Known allergies, including latex, chlorine, or adhesive</li>'+
-      '<li>Current medications</li>'+
-      '<li>History of aspiration or swallowing difficulty</li>'+
-      '<li>Bowel/bladder continence status <i>(used only for session and pool-hygiene planning; kept confidential)</i></li>'+
-      '<li>Prior aquatic therapy or swim lesson experience</li>'+
-      '<li>Child\'s comfort level in water — comfortable / cautious / fearful / never been in a pool</li>'+
-      '<li>Any water-related fear or trauma the therapist should know about</li>'+
-    '</ul>'+
-    '<h5>Developmental &amp; Therapy History</h5>'+
-    '<ul>'+
-      '<li>Age at diagnosis, if applicable</li>'+
-      '<li>Current or past therapies (OT, PT, speech, ABA, etc.) — provider names and frequency</li>'+
-      '<li>Areas of daily function that are hardest right now (dressing, feeding, play, transitions, etc.)</li>'+
-    '</ul>'+
-    '<h5>Educational History</h5>'+
-    '<ul>'+
-      '<li>Current school/preschool/homeschool placement, grade level, and teacher name</li>'+
-      '<li>Relevant IEP, 504 plan, or other school-based accommodations/services</li>'+
-      '<li>School-based OT, PT, or speech services currently received, if any</li>'+
-      '<li>Any relevant school reports or evaluations available to share (optional)</li>'+
-    '</ul>'+
-    '<h5>Occupational Therapy Questionnaire — check all that apply</h5>'+
-    '<p><i>This section flags specific domains so the evaluation starts from what you already know, not from scratch.</i></p>'+
-    '<ul>'+
-      '<li><b>Oral motor / feeding</b> — ☐ picky/selective eating &nbsp; ☐ chewing/swallowing difficulty &nbsp; ☐ drooling &nbsp; ☐ tube feeding &nbsp; ☐ none noted</li>'+
-      '<li><b>Fine motor</b> — ☐ grasp/pincer difficulty &nbsp; ☐ handwriting/pre-writing difficulty &nbsp; ☐ using utensils/buttons/zippers &nbsp; ☐ none noted</li>'+
-      '<li><b>Visual motor</b> — ☐ hand-eye coordination &nbsp; ☐ copying shapes/letters &nbsp; ☐ catching/throwing &nbsp; ☐ none noted</li>'+
-      '<li><b>Sensory processing &amp; regulation</b> — ☐ over-responsive to touch/sound/movement &nbsp; ☐ under-responsive/seeking input &nbsp; ☐ difficulty with transitions &nbsp; ☐ meltdowns/shutdowns &nbsp; ☐ none noted</li>'+
-      '<li><b>Aquatic experience &amp; skill level</b> — ☐ never been in a pool &nbsp; ☐ non-swimmer, uncomfortable &nbsp; ☐ beginner, tolerates with support &nbsp; ☐ comfortable/independent in water &nbsp; prior swim lessons? '+blank(70)+'</li>'+
-      '<li><b>Disability / precautions relevant to water-based therapy</b> — ☐ seizure precautions in water &nbsp; ☐ uses mobility equipment in/around pool (specify: '+blank(90)+') &nbsp; ☐ skin/wound precautions (chlorine exposure) &nbsp; ☐ latex-sensitive equipment concerns &nbsp; ☐ other: '+blank(120)+'</li>'+
-      '<li><b>Primary concerns to address in OT sessions</b> — in your own words: '+blank(220)+'</li>'+
-    '</ul>'+
-    '<h5>Scheduling &amp; Payment</h5>'+
-    '<ul>'+
-      '<li>Preferred day/time — Fridays; please list any constraints</li>'+
-      '<li>Preferred contact method for scheduling — text / email / call</li>'+
-      '<li>☐ I understand '+fillField("practiceName")+' is private-pay only and does not bill insurance directly. A superbill is available on request for possible out-of-network reimbursement, submitted at the family\'s own discretion.</li>'+
-    '</ul>'+
-    '<h5>Consent to Contact Others (Release of Information) — optional</h5>'+
-    '<p>I authorize '+fillField("practiceName")+' to communicate with the following individuals/providers regarding my child\'s care: '+blank(160)+'. This may be revoked in writing at any time.</p>'+
+    docSec(d,"child","Child Information",
+      '<ul><li>Child\'s full legal name</li><li>Date of birth</li><li>Age</li><li>Home address</li><li>Primary language spoken at home</li></ul>')+
+    docSec(d,"parent","Parent / Guardian Information",
+      '<ul>'+
+        '<li>Parent/Guardian 1 — name, relationship to child, phone, email</li>'+
+        '<li>Parent/Guardian 2 — name, relationship to child, phone, email (if applicable)</li>'+
+        '<li>Who has legal custody / legal authority to consent to treatment? <i>(please attach documentation if custody is not shared between both parents listed above)</i></li>'+
+        '<li>Emergency contact, if different from above — name, relationship, phone</li>'+
+      '</ul>')+
+    docSec(d,"referral","Referral &amp; Reason for Seeking Services",
+      '<ul>'+
+        '<li>How did you hear about '+fillField("practiceName")+'? (referring provider, pediatrician, school, word of mouth, other)</li>'+
+        '<li>Referring provider name &amp; contact, if applicable</li>'+
+        '<li>Primary concerns / reason for seeking OT, in your own words</li>'+
+        '<li>Current diagnoses, if any</li>'+
+      '</ul>')+
+    docSec(d,"medical","Medical &amp; Safety History — Aquatic-Specific",
+      '<p><i>This section is longer than a typical intake because sessions happen in a pool — please be thorough.</i></p>'+
+      '<ul>'+
+        '<li>Seizure history (type, frequency, last occurrence, known triggers)</li>'+
+        '<li>Cardiac or respiratory conditions</li>'+
+        '<li>Skin conditions, open wounds, or recent surgical sites</li>'+
+        '<li>Feeding tubes, shunts (e.g. VP shunt), catheters, or other medical devices</li>'+
+        '<li>Known allergies, including latex, chlorine, or adhesive</li>'+
+        '<li>Current medications</li>'+
+        '<li>History of aspiration or swallowing difficulty</li>'+
+        '<li>Bowel/bladder continence status <i>(used only for session and pool-hygiene planning; kept confidential)</i></li>'+
+        '<li>Prior aquatic therapy or swim lesson experience</li>'+
+        '<li>Child\'s comfort level in water — comfortable / cautious / fearful / never been in a pool</li>'+
+        '<li>Any water-related fear or trauma the therapist should know about</li>'+
+      '</ul>')+
+    docSec(d,"dev","Developmental &amp; Therapy History",
+      '<ul>'+
+        '<li>Age at diagnosis, if applicable</li>'+
+        '<li>Current or past therapies (OT, PT, speech, ABA, etc.) — provider names and frequency</li>'+
+        '<li>Areas of daily function that are hardest right now (dressing, feeding, play, transitions, etc.)</li>'+
+      '</ul>')+
+    docSec(d,"edu","Educational History",
+      '<ul>'+
+        '<li>Current school/preschool/homeschool placement, grade level, and teacher name</li>'+
+        '<li>Relevant IEP, 504 plan, or other school-based accommodations/services</li>'+
+        '<li>School-based OT, PT, or speech services currently received, if any</li>'+
+        '<li>Any relevant school reports or evaluations available to share (optional)</li>'+
+      '</ul>')+
+    docSec(d,"otq","Occupational Therapy Questionnaire — check all that apply",
+      '<p><i>This section flags specific domains so the evaluation starts from what you already know, not from scratch.</i></p>'+
+      '<ul>'+
+        '<li><b>Oral motor / feeding</b> — ☐ picky/selective eating &nbsp; ☐ chewing/swallowing difficulty &nbsp; ☐ drooling &nbsp; ☐ tube feeding &nbsp; ☐ none noted</li>'+
+        '<li><b>Fine motor</b> — ☐ grasp/pincer difficulty &nbsp; ☐ handwriting/pre-writing difficulty &nbsp; ☐ using utensils/buttons/zippers &nbsp; ☐ none noted</li>'+
+        '<li><b>Visual motor</b> — ☐ hand-eye coordination &nbsp; ☐ copying shapes/letters &nbsp; ☐ catching/throwing &nbsp; ☐ none noted</li>'+
+        '<li><b>Sensory processing &amp; regulation</b> — ☐ over-responsive to touch/sound/movement &nbsp; ☐ under-responsive/seeking input &nbsp; ☐ difficulty with transitions &nbsp; ☐ meltdowns/shutdowns &nbsp; ☐ none noted</li>'+
+        '<li><b>Aquatic experience &amp; skill level</b> — ☐ never been in a pool &nbsp; ☐ non-swimmer, uncomfortable &nbsp; ☐ beginner, tolerates with support &nbsp; ☐ comfortable/independent in water &nbsp; prior swim lessons? '+blank(70)+'</li>'+
+        '<li><b>Disability / precautions relevant to water-based therapy</b> — ☐ seizure precautions in water &nbsp; ☐ uses mobility equipment in/around pool (specify: '+blank(90)+') &nbsp; ☐ skin/wound precautions (chlorine exposure) &nbsp; ☐ latex-sensitive equipment concerns &nbsp; ☐ other: '+blank(120)+'</li>'+
+        '<li><b>Primary concerns to address in OT sessions</b> — in your own words: '+blank(220)+'</li>'+
+      '</ul>')+
+    docSec(d,"sched","Scheduling &amp; Payment",
+      '<ul>'+
+        '<li>Preferred day/time — Fridays; please list any constraints</li>'+
+        '<li>Preferred contact method for scheduling — text / email / call</li>'+
+        '<li>☐ I understand '+fillField("practiceName")+' is private-pay only and does not bill insurance directly. A superbill is available on request for possible out-of-network reimbursement, submitted at the family\'s own discretion.</li>'+
+      '</ul>')+
+    docSec(d,"roi","Consent to Contact Others (Release of Information) — optional",
+      '<p>I authorize '+fillField("practiceName")+' to communicate with the following individuals/providers regarding my child\'s care: '+blank(160)+'. This may be revoked in writing at any time.</p>')+
     '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Relationship to child: '+blank(90)+' &nbsp; Date: '+blank(90)+'</div>'+
   '</div>';
 }
 
 function consentFormHtml(){
+  var d = "consent";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — Consent for Aquatic Occupational Therapy Treatment</div>'+
     '<p class="helptext" style="margin-bottom:14px">Child\'s name: '+blank(140)+' &nbsp; Date of birth: '+blank(90)+'</p>'+
-    '<h5>What Aquatic OT Involves</h5>'+
-    '<p>Aquatic occupational therapy uses the properties of water — buoyancy, resistance, warmth, and sensory input — to work on '+fillField("goalsBlurb")+'. Sessions take place in a pool at '+fillField("facilityName")+', a facility '+fillField("practiceName")+' rents by the hour; the pool itself is not owned or operated by '+fillField("practiceName")+'.</p>'+
-    '<h5>Risks of Aquatic Therapy — please read carefully</h5>'+
-    '<p>As with any treatment involving water, there are risks in addition to the general risks of occupational therapy. These include, but are not limited to:</p>'+
-    '<ul>'+
-      '<li>Slipping on a wet pool deck or in the water</li>'+
-      '<li>Swallowing or inhaling water</li>'+
-      '<li>Skin or eye irritation from pool chemicals (chlorine/bromine)</li>'+
-      '<li>Fatigue, chilling, or overheating</li>'+
-      '<li>Emotional or behavioral dysregulation in the water environment</li>'+
-      '<li>Risk of submersion/drowning, despite continuous 1:1 supervision by the therapist</li>'+
-    '</ul>'+
-    '<h5>Pool Environment &amp; Supervision</h5>'+
-    '<ul>'+
-      '<li>Sessions occur at '+fillField("facilityName")+'. Lifeguard coverage follows that facility\'s own policy — '+fillField("lifeguardPolicy")+'.</li>'+
-      '<li>Your child\'s OT provides continuous 1:1 clinical supervision throughout the session. '+fillField("lifeguardCred")+' Clinical supervision by an OT is not a substitute for lifeguard supervision where the facility requires one.</li>'+
-      '<li>A parent or guardian must remain on-site (on the pool deck or immediate facility) for the full duration of every session, and is responsible for the child\'s supervision and safety during arrival, departure, and any time the child is not in direct session with the therapist.</li>'+
-      '<li>For some children or goals, the parent/guardian may be asked to enter the water as part of a treatment strategy — this will always be discussed and agreed to in advance, never sprung on you mid-session.</li>'+
-    '</ul>'+
-    '<h5>Consent to Treatment</h5>'+
-    '<ul>'+
-      '<li>I understand aquatic OT involves physical contact, handling, and positioning of my child in and around water as part of treatment.</li>'+
-      '<li>I understand '+fillField("practiceName")+' is a private-pay practice and does not bill insurance; I am responsible for payment per the Service Agreement.</li>'+
-      '<li>I understand I may stop treatment or withdraw this consent at any time, for any reason, without it affecting future care.</li>'+
-      '<li>I understand no specific outcome or result is guaranteed.</li>'+
-      '<li>I consent to the use of photos/video for clinical documentation purposes only; separate written consent will be requested before any image of my child is used for marketing.</li>'+
-    '</ul>'+
+    docSec(d,"involves","What Aquatic OT Involves",
+      '<p>Aquatic occupational therapy uses the properties of water — buoyancy, resistance, warmth, and sensory input — to work on '+fillField("goalsBlurb")+'. Sessions take place in a pool at '+fillField("facilityName")+', a facility '+fillField("practiceName")+' rents by the hour; the pool itself is not owned or operated by '+fillField("practiceName")+'.</p>')+
+    docSec(d,"risks","Risks of Aquatic Therapy — please read carefully",
+      '<p>As with any treatment involving water, there are risks in addition to the general risks of occupational therapy. These include, but are not limited to:</p>'+
+      '<ul>'+
+        '<li>Slipping on a wet pool deck or in the water</li>'+
+        '<li>Swallowing or inhaling water</li>'+
+        '<li>Skin or eye irritation from pool chemicals (chlorine/bromine)</li>'+
+        '<li>Fatigue, chilling, or overheating</li>'+
+        '<li>Emotional or behavioral dysregulation in the water environment</li>'+
+        '<li>Risk of submersion/drowning, despite continuous 1:1 supervision by the therapist</li>'+
+      '</ul>')+
+    docSec(d,"supervision","Pool Environment &amp; Supervision",
+      '<ul>'+
+        '<li>Sessions occur at '+fillField("facilityName")+'. Lifeguard coverage follows that facility\'s own policy — '+fillField("lifeguardPolicy")+'.</li>'+
+        '<li>Your child\'s OT provides continuous 1:1 clinical supervision throughout the session. '+fillField("lifeguardCred")+' Clinical supervision by an OT is not a substitute for lifeguard supervision where the facility requires one.</li>'+
+        '<li>A parent or guardian must remain on-site (on the pool deck or immediate facility) for the full duration of every session, and is responsible for the child\'s supervision and safety during arrival, departure, and any time the child is not in direct session with the therapist.</li>'+
+        '<li>For some children or goals, the parent/guardian may be asked to enter the water as part of a treatment strategy — this will always be discussed and agreed to in advance, never sprung on you mid-session.</li>'+
+      '</ul>')+
+    docSec(d,"consent","Consent to Treatment",
+      '<ul>'+
+        '<li>I understand aquatic OT involves physical contact, handling, and positioning of my child in and around water as part of treatment.</li>'+
+        '<li>I understand '+fillField("practiceName")+' is a private-pay practice and does not bill insurance; I am responsible for payment per the Service Agreement.</li>'+
+        '<li>I understand I may stop treatment or withdraw this consent at any time, for any reason, without it affecting future care.</li>'+
+        '<li>I understand no specific outcome or result is guaranteed.</li>'+
+        '<li>I consent to the use of photos/video for clinical documentation purposes only; separate written consent will be requested before any image of my child is used for marketing.</li>'+
+      '</ul>')+
     '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Relationship to child: '+blank(90)+' &nbsp; Date: '+blank(90)+'</div>'+
   '</div>';
 }
@@ -1553,147 +1581,152 @@ function cancellationPolicyHtml(){
 }
 
 function serviceAgreementHtml(){
+  var d = "agreement";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — Service Agreement &amp; Practice Policies</div>'+
     '<p class="helptext" style="margin-bottom:14px">Please read and sign before your child\'s first session.</p>'+
-    '<h5>About This Practice</h5>'+
-    '<ul>'+
-      '<li>'+fillField("practiceName")+' is a private-pay pediatric occupational therapy practice providing aquatic-based OT for children ages 2–16, currently operating on Fridays at '+fillField("facilityName")+'.</li>'+
-      '<li>'+fillField("practiceName")+' does not bill insurance directly. A superbill (an itemized receipt with diagnosis and procedure codes) is available on request, which you may submit to your insurance for possible out-of-network reimbursement — reimbursement is not guaranteed and is between you and your insurance company.</li>'+
-    '</ul>'+
-    '<h5>Sessions</h5>'+
-    '<ul>'+
-      '<li>Standard session length: '+fillField("sessionLength")+' minutes, including transition/dressing time in and out of the water.</li>'+
-      '<li>Please arrive '+fillField("arrivalWindow")+' minutes before your scheduled time to change and be poolside ready to begin — session time cannot be extended if you arrive late.</li>'+
-      '<li>What to bring: swimsuit, towel, goggles if your child uses them, a change of clothes, and any comfort items that help with transitions.</li>'+
-      '<li>A parent or guardian must remain on-site for the entire session (see the Consent for Aquatic OT Treatment form).</li>'+
-    '</ul>'+
-    '<h5>Fees &amp; Payment</h5>'+
-    '<ul>'+
-      '<li>Session rate: $'+fillField("sessionRateAmt")+'. Evaluation rate: $'+fillField("evalRateAmt")+'.</li>'+
-      '<li>Payment is due at the time of service, by '+fillField("paymentMethods")+'.</li>'+
-      '<li>Package pricing, if offered, is described separately at intake.</li>'+
-      '<li>See the Cancellation &amp; No-Show Policy above for late-cancellation and no-show fees.</li>'+
-    '</ul>'+
-    '<h5>Communication</h5>'+
-    '<ul>'+
-      '<li>Non-urgent questions: '+fillField("commMethod")+', typical response within '+fillField("responseTime")+'.</li>'+
-      '<li>This is not an emergency service. For a medical emergency, call 911 or go to the nearest emergency room.</li>'+
-    '</ul>'+
-    '<h5>Documentation &amp; Records</h5>'+
-    '<ul>'+
-      '<li>'+fillField("practiceName")+' keeps clinical documentation (evaluations, session notes, progress notes) consistent with California OT licensure and recordkeeping requirements, and treats all records as confidential even though this is a private-pay, non-insurance practice.</li>'+
-      '<li>You may request a copy of your child\'s records at any time, in writing.</li>'+
-    '</ul>'+
-    '<h5>Scope &amp; Location</h5>'+
-    '<p>Sessions currently take place at '+fillField("facilityName")+' on Fridays. Location and availability are subject to change based on pool access, and families will be notified as early as possible of any change.</p>'+
-    '<h5>Ending Services</h5>'+
-    '<p>Either you or '+fillField("practiceName")+' may end services at any time, for any reason, with reasonable notice. '+fillField("practiceName")+' will provide a discharge summary and, where appropriate, referrals to continue care elsewhere.</p>'+
-    '<h5>Agreement</h5>'+
-    '<p>By signing below, I acknowledge that I have received, read, and agree to this Service Agreement, the Cancellation &amp; No-Show Policy, and the Consent for Aquatic OT Treatment.</p>'+
+    docSec(d,"about","About This Practice",
+      '<ul>'+
+        '<li>'+fillField("practiceName")+' is a private-pay pediatric occupational therapy practice providing aquatic-based OT for children ages 2–16, currently operating on Fridays at '+fillField("facilityName")+'.</li>'+
+        '<li>'+fillField("practiceName")+' does not bill insurance directly. A superbill (an itemized receipt with diagnosis and procedure codes) is available on request, which you may submit to your insurance for possible out-of-network reimbursement — reimbursement is not guaranteed and is between you and your insurance company.</li>'+
+      '</ul>')+
+    docSec(d,"sessions","Sessions",
+      '<ul>'+
+        '<li>Standard session length: '+fillField("sessionLength")+' minutes, including transition/dressing time in and out of the water.</li>'+
+        '<li>Please arrive '+fillField("arrivalWindow")+' minutes before your scheduled time to change and be poolside ready to begin — session time cannot be extended if you arrive late.</li>'+
+        '<li>What to bring: swimsuit, towel, goggles if your child uses them, a change of clothes, and any comfort items that help with transitions.</li>'+
+        '<li>A parent or guardian must remain on-site for the entire session (see the Consent for Aquatic OT Treatment form).</li>'+
+      '</ul>')+
+    docSec(d,"fees","Fees &amp; Payment",
+      '<ul>'+
+        '<li>Session rate: $'+fillField("sessionRateAmt")+'. Evaluation rate: $'+fillField("evalRateAmt")+'.</li>'+
+        '<li>Payment is due at the time of service, by '+fillField("paymentMethods")+'.</li>'+
+        '<li>Package pricing, if offered, is described separately at intake.</li>'+
+        '<li>See the Cancellation &amp; No-Show Policy above for late-cancellation and no-show fees.</li>'+
+      '</ul>')+
+    docSec(d,"comm","Communication",
+      '<ul>'+
+        '<li>Non-urgent questions: '+fillField("commMethod")+', typical response within '+fillField("responseTime")+'.</li>'+
+        '<li>This is not an emergency service. For a medical emergency, call 911 or go to the nearest emergency room.</li>'+
+      '</ul>')+
+    docSec(d,"records","Documentation &amp; Records",
+      '<ul>'+
+        '<li>'+fillField("practiceName")+' keeps clinical documentation (evaluations, session notes, progress notes) consistent with California OT licensure and recordkeeping requirements, and treats all records as confidential even though this is a private-pay, non-insurance practice.</li>'+
+        '<li>You may request a copy of your child\'s records at any time, in writing.</li>'+
+      '</ul>')+
+    docSec(d,"scope","Scope &amp; Location",
+      '<p>Sessions currently take place at '+fillField("facilityName")+' on Fridays. Location and availability are subject to change based on pool access, and families will be notified as early as possible of any change.</p>')+
+    docSec(d,"ending","Ending Services",
+      '<p>Either you or '+fillField("practiceName")+' may end services at any time, for any reason, with reasonable notice. '+fillField("practiceName")+' will provide a discharge summary and, where appropriate, referrals to continue care elsewhere.</p>')+
+    docSec(d,"agree","Agreement",
+      '<p>By signing below, I acknowledge that I have received, read, and agree to this Service Agreement, the Cancellation &amp; No-Show Policy, and the Consent for Aquatic OT Treatment.</p>')+
     '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Date: '+blank(90)+'</div>'+
   '</div>';
 }
 
 function photoReleaseHtml(){
+  var d = "photoRelease";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — Photo, Video &amp; Media Recording Release (Optional)</div>'+
     '<p class="helptext" style="margin-bottom:14px">Separate from and optional beyond the Consent for Aquatic OT Treatment, which only covers photos/video for clinical documentation. This release is for marketing use only — signing it is never required to receive treatment.</p>'+
-    '<h5>Permission</h5>'+
-    '<p>I give permission for '+fillField("practiceName")+' to use photos and/or video of my child taken during sessions for the following purposes (check all that apply):</p>'+
-    '<ul>'+
-      '<li>☐ Practice website</li>'+
-      '<li>☐ Social media (Instagram, Facebook, etc.)</li>'+
-      '<li>☐ Printed marketing materials (flyers, brochures)</li>'+
-      '<li>☐ Written testimonials/quotes attributed to our family (first name only, no other identifying details)</li>'+
-    '</ul>'+
-    '<h5>What This Means</h5>'+
-    '<ul>'+
-      '<li>This permission is entirely optional — declining does not affect treatment in any way.</li>'+
-      '<li>My child\'s face may be visible; images will never be paired with diagnosis, treatment goals, or other health information.</li>'+
-      '<li>I may revoke this permission in writing at any time; images already posted or printed may not be fully retrievable.</li>'+
-      '<li>No compensation is provided for use of these images.</li>'+
-    '</ul>'+
+    docSec(d,"permission","Permission",
+      '<p>I give permission for '+fillField("practiceName")+' to use photos and/or video of my child taken during sessions for the following purposes (check all that apply):</p>'+
+      '<ul>'+
+        '<li>☐ Practice website</li>'+
+        '<li>☐ Social media (Instagram, Facebook, etc.)</li>'+
+        '<li>☐ Printed marketing materials (flyers, brochures)</li>'+
+        '<li>☐ Written testimonials/quotes attributed to our family (first name only, no other identifying details)</li>'+
+      '</ul>')+
+    docSec(d,"means","What This Means",
+      '<ul>'+
+        '<li>This permission is entirely optional — declining does not affect treatment in any way.</li>'+
+        '<li>My child\'s face may be visible; images will never be paired with diagnosis, treatment goals, or other health information.</li>'+
+        '<li>I may revoke this permission in writing at any time; images already posted or printed may not be fully retrievable.</li>'+
+        '<li>No compensation is provided for use of these images.</li>'+
+      '</ul>')+
     '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Relationship to child: '+blank(90)+' &nbsp; Date: '+blank(90)+'</div>'+
   '</div>';
 }
 
 function participationAgreementHtml(){
+  var d = "participation";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — Participation Agreement &amp; Consents</div>'+
     '<p class="helptext" style="margin-bottom:14px">A single registration packet covering physician/emergency info, general consents, privacy, attendance, and billing — sign once at intake alongside the Treatment Consent form.</p>'+
-    '<h5>Physician Information</h5>'+
-    '<ul><li>Primary/referring physician name: '+blank(180)+'</li><li>Phone: '+blank(120)+' &nbsp; Fax: '+blank(120)+'</li><li>Address: '+blank(220)+'</li></ul>'+
-    '<h5>Emergency Contact &amp; Medical Snapshot</h5>'+
-    '<ul>'+
-      '<li>Emergency contact name &amp; relationship: '+blank(200)+' &nbsp; Phone: '+blank(120)+'</li>'+
-      '<li>Known allergies: '+blank(220)+'</li>'+
-      '<li>Current medications: '+blank(220)+'</li>'+
-      '<li>Key medical conditions the therapist should know about day-to-day: '+blank(220)+'</li>'+
-    '</ul>'+
-    '<h5>Responsible Party for Payment</h5>'+
-    '<p>Financially responsible party (if different from the parent/guardian listed on the Intake Form): '+blank(200)+'</p>'+
-    '<h5>General Consent to Evaluate &amp; Treat</h5>'+
-    '<p>I consent to an occupational therapy evaluation and ongoing treatment for my child by '+fillField("practiceName")+'. This is separate from, and in addition to, the aquatic-specific risks and pool supervision details covered in the Treatment Consent form.</p>'+
-    '<h5>Consent for Bathroom &amp; Changing Assistance</h5>'+
-    '<p>I understand that, given the aquatic setting, my child may need help using the restroom or changing into/out of swimwear before or after a session. I consent to age-appropriate assistance from the treating therapist or another designated staff member when needed, and understand I will be notified of any bathroom accident or incident during a session.</p>'+
-    '<h5>Acknowledgement of Privacy Practices</h5>'+
-    '<p>'+fillField("practiceName")+' keeps clinical records confidential and does not share them outside the circle of care without written authorization, except where required by law. Because this is a private-pay practice, no insurance eligibility verification or insurance-based data sharing applies — records are shared only at your request (e.g. a superbill, or the Release of Information in the Intake Form). ☐ I acknowledge I have received and understand this practice\'s privacy practices.</p>'+
-    '<h5>Attendance Policy</h5>'+
-    '<p>Consistent Friday attendance is part of what makes progress possible in a once-weekly model. Please give as much notice as possible for planned absences (vacations, appointments), and see the Cancellation &amp; No-Show Policy for what counts as late notice. An extended unplanned absence may prompt a conversation about whether the current schedule still fits.</p>'+
-    '<h5>Missed Appointment &amp; Cancellation Policy</h5>'+
-    '<p>Summary: at least '+fillField("noticeHours")+' hours\' notice to cancel; late cancellations/no-shows are billed at '+fillField("lateFee")+'. Full policy, including repeat-no-show handling, is in the standalone Cancellation &amp; No-Show Policy document.</p>'+
-    '<h5>Billing &amp; Financial Responsibility</h5>'+
-    '<ul>'+
-      '<li>'+fillField("practiceName")+' is private-pay only and does not bill insurance directly, verify insurance eligibility, or accept assignment of insurance benefits.</li>'+
-      '<li>The responsible party listed above is financially responsible for all session and evaluation fees at the time of service.</li>'+
-      '<li>A superbill is available on request for out-of-network reimbursement, submitted by the family at their own discretion — see the Service Agreement.</li>'+
-    '</ul>'+
-    '<h5>Credit Card / Payment-on-File Authorization</h5>'+
-    '<p>I authorize '+fillField("practiceName")+' to keep the card below on file and to charge it for session fees, evaluation fees, and any late-cancellation/no-show fees per the policy above.</p>'+
-    '<ul><li>Cardholder name: '+blank(180)+'</li><li>Card number: '+blank(200)+' &nbsp; Exp: '+blank(70)+' &nbsp; CVV: '+blank(60)+'</li><li>Billing zip code: '+blank(90)+'</li></ul>'+
-    legalDisclaimer("Never type a real card number into this app — this section is a paper-form field layout only. Capture actual card details through a PCI-compliant processor (Stripe, Square, or your EHR/scheduling tool's built-in billing) once you pick one in Week 8.")+
+    docSec(d,"physician","Physician Information",
+      '<ul><li>Primary/referring physician name: '+blank(180)+'</li><li>Phone: '+blank(120)+' &nbsp; Fax: '+blank(120)+'</li><li>Address: '+blank(220)+'</li></ul>')+
+    docSec(d,"emergency","Emergency Contact &amp; Medical Snapshot",
+      '<ul>'+
+        '<li>Emergency contact name &amp; relationship: '+blank(200)+' &nbsp; Phone: '+blank(120)+'</li>'+
+        '<li>Known allergies: '+blank(220)+'</li>'+
+        '<li>Current medications: '+blank(220)+'</li>'+
+        '<li>Key medical conditions the therapist should know about day-to-day: '+blank(220)+'</li>'+
+      '</ul>')+
+    docSec(d,"responsible","Responsible Party for Payment",
+      '<p>Financially responsible party (if different from the parent/guardian listed on the Intake Form): '+blank(200)+'</p>')+
+    docSec(d,"generalconsent","General Consent to Evaluate &amp; Treat",
+      '<p>I consent to an occupational therapy evaluation and ongoing treatment for my child by '+fillField("practiceName")+'. This is separate from, and in addition to, the aquatic-specific risks and pool supervision details covered in the Treatment Consent form.</p>')+
+    docSec(d,"bathroom","Consent for Bathroom &amp; Changing Assistance",
+      '<p>I understand that, given the aquatic setting, my child may need help using the restroom or changing into/out of swimwear before or after a session. I consent to age-appropriate assistance from the treating therapist or another designated staff member when needed, and understand I will be notified of any bathroom accident or incident during a session.</p>')+
+    docSec(d,"privacyack","Acknowledgement of Privacy Practices",
+      '<p>'+fillField("practiceName")+' keeps clinical records confidential and does not share them outside the circle of care without written authorization, except where required by law. Because this is a private-pay practice, no insurance eligibility verification or insurance-based data sharing applies — records are shared only at your request (e.g. a superbill, or the Release of Information in the Intake Form). ☐ I acknowledge I have received and understand this practice\'s privacy practices.</p>')+
+    docSec(d,"attendance","Attendance Policy",
+      '<p>Consistent Friday attendance is part of what makes progress possible in a once-weekly model. Please give as much notice as possible for planned absences (vacations, appointments), and see the Cancellation &amp; No-Show Policy for what counts as late notice. An extended unplanned absence may prompt a conversation about whether the current schedule still fits.</p>')+
+    docSec(d,"missed","Missed Appointment &amp; Cancellation Policy",
+      '<p>Summary: at least '+fillField("noticeHours")+' hours\' notice to cancel; late cancellations/no-shows are billed at '+fillField("lateFee")+'. Full policy, including repeat-no-show handling, is in the standalone Cancellation &amp; No-Show Policy document.</p>')+
+    docSec(d,"billing","Billing &amp; Financial Responsibility",
+      '<ul>'+
+        '<li>'+fillField("practiceName")+' is private-pay only and does not bill insurance directly, verify insurance eligibility, or accept assignment of insurance benefits.</li>'+
+        '<li>The responsible party listed above is financially responsible for all session and evaluation fees at the time of service.</li>'+
+        '<li>A superbill is available on request for out-of-network reimbursement, submitted by the family at their own discretion — see the Service Agreement.</li>'+
+      '</ul>')+
+    docSec(d,"card","Credit Card / Payment-on-File Authorization",
+      '<p>I authorize '+fillField("practiceName")+' to keep the card below on file and to charge it for session fees, evaluation fees, and any late-cancellation/no-show fees per the policy above.</p>'+
+      '<ul><li>Cardholder name: '+blank(180)+'</li><li>Card number: '+blank(200)+' &nbsp; Exp: '+blank(70)+' &nbsp; CVV: '+blank(60)+'</li><li>Billing zip code: '+blank(90)+'</li></ul>'+
+      legalDisclaimer("Never type a real card number into this app — this section is a paper-form field layout only. Capture actual card details through a PCI-compliant processor (Stripe, Square, or your EHR/scheduling tool's built-in billing) once you pick one in Week 8."))+
     '<div class="doc-sig" style="margin-top:14px">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Relationship to child: '+blank(90)+' &nbsp; Date: '+blank(90)+'</div>'+
   '</div>';
 }
 
 function privacyNoticeHtml(){
+  var d = "privacyNotice";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — Notice of Privacy Practices</div>'+
     '<p class="helptext" style="margin-bottom:14px">Effective date: '+blank(100)+'. Because this practice is private-pay and doesn\'t bill insurance electronically, it likely isn\'t a "HIPAA covered entity" in the technical sense — but California\'s Confidentiality of Medical Information Act (CMIA) still applies, and following HIPAA-style practices voluntarily is good professional standard regardless. Confirm covered-entity status with an attorney if that ever changes (e.g. if insurance billing is added later).</p>'+
-    '<h5>What Information We Collect</h5>'+
-    '<p>Demographic and contact information, medical and developmental history, evaluation findings, session notes, progress and discharge reports, and billing records — collected via the Intake Form and during treatment.</p>'+
-    '<h5>How We Use It</h5>'+
-    '<ul>'+
-      '<li>To evaluate, plan, and provide occupational therapy services.</li>'+
-      '<li>To communicate with you about scheduling, progress, and billing.</li>'+
-      '<li>To coordinate care with other providers, but <b>only</b> with your written authorization (see the Release of Information form) — never shared for insurance billing, since '+fillField("practiceName")+' doesn\'t bill insurance.</li>'+
-    '</ul>'+
-    '<h5>How We Protect It</h5>'+
-    '<p>Records are kept in a secure EHR/documentation system with access limited to the treating therapist, and are retained per California OT licensure recordkeeping requirements.</p>'+
-    '<h5>When We May Share Information Without Your Authorization</h5>'+
-    '<ul>'+
-      '<li>When required by law (e.g. mandated reporting of suspected child abuse or neglect).</li>'+
-      '<li>To prevent serious, imminent harm to the client or others.</li>'+
-      '<li>In response to a valid court order or subpoena.</li>'+
-    '</ul>'+
-    '<h5>Your Rights</h5>'+
-    '<ul>'+
-      '<li>Request a copy of your child\'s records at any time, in writing.</li>'+
-      '<li>Request corrections to records you believe are inaccurate.</li>'+
-      '<li>Request an accounting of any disclosures made outside routine treatment/communication.</li>'+
-      '<li>Revoke any prior authorization to share records, in writing, at any time (except for disclosures already made in reliance on it).</li>'+
-    '</ul>'+
-    '<h5>Questions or Concerns</h5>'+
-    '<p>Contact '+fillField("practiceName")+' by '+fillField("commMethod")+' with any privacy question or concern.</p>'+
+    docSec(d,"collect","What Information We Collect",
+      '<p>Demographic and contact information, medical and developmental history, evaluation findings, session notes, progress and discharge reports, and billing records — collected via the Intake Form and during treatment.</p>')+
+    docSec(d,"use","How We Use It",
+      '<ul>'+
+        '<li>To evaluate, plan, and provide occupational therapy services.</li>'+
+        '<li>To communicate with you about scheduling, progress, and billing.</li>'+
+        '<li>To coordinate care with other providers, but <b>only</b> with your written authorization (see the Release of Information form) — never shared for insurance billing, since '+fillField("practiceName")+' doesn\'t bill insurance.</li>'+
+      '</ul>')+
+    docSec(d,"protect","How We Protect It",
+      '<p>Records are kept in a secure EHR/documentation system with access limited to the treating therapist, and are retained per California OT licensure recordkeeping requirements.</p>')+
+    docSec(d,"noauth","When We May Share Information Without Your Authorization",
+      '<ul>'+
+        '<li>When required by law (e.g. mandated reporting of suspected child abuse or neglect).</li>'+
+        '<li>To prevent serious, imminent harm to the client or others.</li>'+
+        '<li>In response to a valid court order or subpoena.</li>'+
+      '</ul>')+
+    docSec(d,"rights","Your Rights",
+      '<ul>'+
+        '<li>Request a copy of your child\'s records at any time, in writing.</li>'+
+        '<li>Request corrections to records you believe are inaccurate.</li>'+
+        '<li>Request an accounting of any disclosures made outside routine treatment/communication.</li>'+
+        '<li>Revoke any prior authorization to share records, in writing, at any time (except for disclosures already made in reliance on it).</li>'+
+      '</ul>')+
+    docSec(d,"questions","Questions or Concerns",
+      '<p>Contact '+fillField("practiceName")+' by '+fillField("commMethod")+' with any privacy question or concern.</p>')+
     '<div class="doc-sig">☐ I acknowledge I have received and reviewed this Notice of Privacy Practices.<br>Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Date: '+blank(100)+'</div>'+
   '</div>';
 }
 function releaseOfInfoHtml(){
+  var d = "releaseOfInfo";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — Release of Information / Authorization to Exchange Records</div>'+
@@ -1701,52 +1734,53 @@ function releaseOfInfoHtml(){
     '<ul>'+
       '<li>Client name: '+blank(200)+' &nbsp; DOB: '+blank(100)+'</li>'+
     '</ul>'+
-    '<h5>Release Information To / From</h5>'+
-    '<ul>'+
-      '<li>Name: '+blank(200)+' &nbsp; Title/role: '+blank(160)+'</li>'+
-      '<li>Organization: '+blank(220)+'</li>'+
-      '<li>Address: '+blank(260)+'</li>'+
-      '<li>Phone: '+blank(140)+' &nbsp; Fax/email: '+blank(160)+'</li>'+
-    '</ul>'+
-    '<h5>Information to Be Released (check all that apply)</h5>'+
-    '<p>☐ Evaluation report &nbsp; ☐ Progress reports &nbsp; ☐ Discharge/exit summary &nbsp; ☐ Session notes &nbsp; ☐ Intake/medical history &nbsp; ☐ Other: '+blank(180)+'</p>'+
-    '<h5>Purpose of Disclosure</h5>'+
-    '<p>'+blank(300)+'</p>'+
-    '<h5>Duration &amp; Revocation</h5>'+
-    '<p>This authorization is valid from the date signed below through '+blank(120)+' (or one year from signature if left blank), and may be revoked in writing at any time except for disclosures already made in reliance on it.</p>'+
+    docSec(d,"to","Release Information To / From",
+      '<ul>'+
+        '<li>Name: '+blank(200)+' &nbsp; Title/role: '+blank(160)+'</li>'+
+        '<li>Organization: '+blank(220)+'</li>'+
+        '<li>Address: '+blank(260)+'</li>'+
+        '<li>Phone: '+blank(140)+' &nbsp; Fax/email: '+blank(160)+'</li>'+
+      '</ul>')+
+    docSec(d,"what","Information to Be Released (check all that apply)",
+      '<p>☐ Evaluation report &nbsp; ☐ Progress reports &nbsp; ☐ Discharge/exit summary &nbsp; ☐ Session notes &nbsp; ☐ Intake/medical history &nbsp; ☐ Other: '+blank(180)+'</p>')+
+    docSec(d,"purpose","Purpose of Disclosure",
+      '<p>'+blank(300)+'</p>')+
+    docSec(d,"duration","Duration &amp; Revocation",
+      '<p>This authorization is valid from the date signed below through '+blank(120)+' (or one year from signature if left blank), and may be revoked in writing at any time except for disclosures already made in reliance on it.</p>')+
     '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Relationship to child: '+blank(90)+' &nbsp; Date: '+blank(90)+'</div>'+
   '</div>';
 }
 
 function inHomeAgreementHtml(){
+  var d = "inHome";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Draft — for review</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — In-Home Aquatic Service Agreement &amp; Home Pool Safety Checklist</div>'+
     '<p class="helptext" style="margin-bottom:14px">Only needed if a session is ever held at a family\'s own home pool instead of '+fillField("facilityName")+' — not part of the standard rented-facility model. The therapist checks these conditions at arrival and may decline or reschedule a session if they aren\'t met.</p>'+
-    '<h5>Pool Access &amp; Condition</h5>'+
-    '<p>☐ Water is visibly clean and clear to the bottom, free of algae/debris &nbsp; ☐ Pool is accessible without hazards blocking the path from the house/gate to the pool</p>'+
-    '<h5>Safe Entry &amp; Exit</h5>'+
-    '<p>☐ Functioning ladder, steps, or ramp at the entry point &nbsp; ☐ Entry surfaces are non-slip &nbsp; ☐ No missing or broken pool equipment creating a hazard</p>'+
-    '<h5>Deck Condition</h5>'+
-    '<p>☐ Deck/surrounding area is free of tripping hazards and excess standing water &nbsp; ☐ Enough clear space for the therapist to move safely around the pool during the session</p>'+
-    '<h5>Pool Temperature &amp; Chemicals</h5>'+
-    '<p>Target water temperature: '+fillField("poolTempRange")+'. ☐ Chemical levels (chlorine/bromine, pH) have been tested same-day or per the family\'s regular pool-service schedule and are within safe range. The therapist may ask to see a recent test strip/log or service report.</p>'+
-    '<h5>Fencing &amp; Barrier Safety</h5>'+
-    '<p>☐ Pool has code-compliant fencing/barrier and a self-latching gate consistent with California pool safety requirements <i>(confirm the exact requirement for your city/county — this varies)</i>.</p>'+
-    '<h5>Pets</h5>'+
-    '<p>☐ Pets are secured away from the pool area for the full session (safety, hygiene, and to avoid distraction).</p>'+
-    '<h5>Other Children &amp; Adults Present</h5>'+
-    '<ul>'+
-      '<li>The participating child\'s parent/guardian must remain on-site for the full session, same as at '+fillField("facilityName")+'.</li>'+
-      '<li>Siblings/other children may be present only if supervised separately and not disruptive to the session.</li>'+
-      '<li>Other adults not part of the household should not be present without discussing it with the therapist in advance.</li>'+
-    '</ul>'+
-    '<h5>Bathroom Access</h5>'+
-    '<p>☐ A bathroom is accessible on-site for changing and restroom needs before/after the session.</p>'+
-    '<h5>Emergency Access</h5>'+
-    '<p>Home address for emergency responders: '+blank(260)+'. ☐ A clear path to the pool area is available for emergency access if ever needed.</p>'+
-    '<h5>Acknowledgment</h5>'+
-    '<p>I understand '+fillField("practiceName")+' does not inspect, certify, or maintain this pool — the family is responsible for its ongoing safety and maintenance. If the pool doesn\'t meet the conditions above at arrival, the therapist may decline or reschedule the session; whether this counts toward the Cancellation &amp; No-Show Policy depends on notice given beforehand.</p>'+
+    docSec(d,"access","Pool Access &amp; Condition",
+      '<p>☐ Water is visibly clean and clear to the bottom, free of algae/debris &nbsp; ☐ Pool is accessible without hazards blocking the path from the house/gate to the pool</p>')+
+    docSec(d,"entry","Safe Entry &amp; Exit",
+      '<p>☐ Functioning ladder, steps, or ramp at the entry point &nbsp; ☐ Entry surfaces are non-slip &nbsp; ☐ No missing or broken pool equipment creating a hazard</p>')+
+    docSec(d,"deck","Deck Condition",
+      '<p>☐ Deck/surrounding area is free of tripping hazards and excess standing water &nbsp; ☐ Enough clear space for the therapist to move safely around the pool during the session</p>')+
+    docSec(d,"temp","Pool Temperature &amp; Chemicals",
+      '<p>Target water temperature: '+fillField("poolTempRange")+'. ☐ Chemical levels (chlorine/bromine, pH) have been tested same-day or per the family\'s regular pool-service schedule and are within safe range. The therapist may ask to see a recent test strip/log or service report.</p>')+
+    docSec(d,"fence","Fencing &amp; Barrier Safety",
+      '<p>☐ Pool has code-compliant fencing/barrier and a self-latching gate consistent with California pool safety requirements <i>(confirm the exact requirement for your city/county — this varies)</i>.</p>')+
+    docSec(d,"pets","Pets",
+      '<p>☐ Pets are secured away from the pool area for the full session (safety, hygiene, and to avoid distraction).</p>')+
+    docSec(d,"others","Other Children &amp; Adults Present",
+      '<ul>'+
+        '<li>The participating child\'s parent/guardian must remain on-site for the full session, same as at '+fillField("facilityName")+'.</li>'+
+        '<li>Siblings/other children may be present only if supervised separately and not disruptive to the session.</li>'+
+        '<li>Other adults not part of the household should not be present without discussing it with the therapist in advance.</li>'+
+      '</ul>')+
+    docSec(d,"bathroom","Bathroom Access",
+      '<p>☐ A bathroom is accessible on-site for changing and restroom needs before/after the session.</p>')+
+    docSec(d,"emergency","Emergency Access",
+      '<p>Home address for emergency responders: '+blank(260)+'. ☐ A clear path to the pool area is available for emergency access if ever needed.</p>')+
+    docSec(d,"ack","Acknowledgment",
+      '<p>I understand '+fillField("practiceName")+' does not inspect, certify, or maintain this pool — the family is responsible for its ongoing safety and maintenance. If the pool doesn\'t meet the conditions above at arrival, the therapist may decline or reschedule the session; whether this counts toward the Cancellation &amp; No-Show Policy depends on notice given beforehand.</p>')+
     '<div class="doc-sig">Parent/Guardian signature: '+blank(180)+' &nbsp; Printed name: '+blank(140)+'<br>Date: '+blank(100)+' &nbsp; Therapist checked conditions on arrival: '+blank(100)+'</div>'+
   '</div>';
 }
@@ -1764,6 +1798,7 @@ var LEGAL_DOCS = [
 ];
 
 function evalReportHtml(){
+  var d = "eval";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Editable template</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — Occupational Therapy Evaluation Report</div>'+
@@ -1773,30 +1808,31 @@ function evalReportHtml(){
       '<li>Date of evaluation: '+blank(100)+' &nbsp; Referral source: '+blank(180)+'</li>'+
       '<li>Diagnosis(es): '+blank(220)+'</li>'+
     '</ul>'+
-    '<h5>Reason for Referral</h5><p>'+blank(400)+'</p>'+
-    '<h5>Background &amp; History Summary</h5><p><i>Medical, developmental, and educational history per Intake Form.</i></p><p>'+blank(400)+'</p>'+
-    '<h5>Assessment Methods</h5><p>☐ Standardized testing (specify: '+blank(160)+') &nbsp; ☐ Clinical/skilled observation &nbsp; ☐ Aquatic-specific skills assessment &nbsp; ☐ Parent/caregiver interview</p>'+
-    '<h5>Findings by Domain</h5>'+
-    '<ul>'+
-      '<li>Fine motor: '+blank(300)+'</li>'+
-      '<li>Visual motor: '+blank(300)+'</li>'+
-      '<li>Sensory processing &amp; regulation: '+blank(300)+'</li>'+
-      '<li>Oral motor / feeding (if applicable): '+blank(300)+'</li>'+
-      '<li>Aquatic skill &amp; comfort level: '+blank(300)+'</li>'+
-      '<li>Functional performance / daily living impact: '+blank(300)+'</li>'+
-    '</ul>'+
-    '<h5>Clinical Impressions &amp; Summary</h5><p>'+blank(400)+'</p>'+
-    '<h5>Recommended Services</h5><p>Frequency/duration: '+blank(160)+' &nbsp; Setting: aquatic OT at '+fillField("facilityName")+'</p>'+
-    '<h5>Goals</h5>'+
-    '<ul>'+
-      '<li>Goal 1: '+blank(300)+' — measurable by: '+blank(200)+'</li>'+
-      '<li>Goal 2: '+blank(300)+' — measurable by: '+blank(200)+'</li>'+
-      '<li>Goal 3: '+blank(300)+' — measurable by: '+blank(200)+'</li>'+
-    '</ul>'+
+    docSec(d,"reason","Reason for Referral",'<p>'+blank(400)+'</p>')+
+    docSec(d,"background","Background &amp; History Summary",'<p><i>Medical, developmental, and educational history per Intake Form.</i></p><p>'+blank(400)+'</p>')+
+    docSec(d,"methods","Assessment Methods",'<p>☐ Standardized testing (specify: '+blank(160)+') &nbsp; ☐ Clinical/skilled observation &nbsp; ☐ Aquatic-specific skills assessment &nbsp; ☐ Parent/caregiver interview</p>')+
+    docSec(d,"findings","Findings by Domain",
+      '<ul>'+
+        '<li>Fine motor: '+blank(300)+'</li>'+
+        '<li>Visual motor: '+blank(300)+'</li>'+
+        '<li>Sensory processing &amp; regulation: '+blank(300)+'</li>'+
+        '<li>Oral motor / feeding (if applicable): '+blank(300)+'</li>'+
+        '<li>Aquatic skill &amp; comfort level: '+blank(300)+'</li>'+
+        '<li>Functional performance / daily living impact: '+blank(300)+'</li>'+
+      '</ul>')+
+    docSec(d,"impressions","Clinical Impressions &amp; Summary",'<p>'+blank(400)+'</p>')+
+    docSec(d,"recommended","Recommended Services",'<p>Frequency/duration: '+blank(160)+' &nbsp; Setting: aquatic OT at '+fillField("facilityName")+'</p>')+
+    docSec(d,"goals","Goals",
+      '<ul>'+
+        '<li>Goal 1: '+blank(300)+' — measurable by: '+blank(200)+'</li>'+
+        '<li>Goal 2: '+blank(300)+' — measurable by: '+blank(200)+'</li>'+
+        '<li>Goal 3: '+blank(300)+' — measurable by: '+blank(200)+'</li>'+
+      '</ul>')+
     '<div class="doc-sig">Therapist signature/credentials: '+blank(220)+' &nbsp; Date: '+blank(100)+'</div>'+
   '</div>';
 }
 function progressReportHtml(){
+  var d = "progress";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Editable template</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — Progress Report</div>'+
@@ -1805,20 +1841,21 @@ function progressReportHtml(){
       '<li>Client name: '+blank(200)+' &nbsp; DOB: '+blank(100)+'</li>'+
       '<li>Reporting period: '+blank(160)+' &nbsp; Sessions attended this period: '+blank(60)+'</li>'+
     '</ul>'+
-    '<h5>Goals &amp; Progress</h5>'+
-    '<ul>'+
-      '<li>Goal 1: '+blank(260)+' — progress/status: '+blank(200)+'</li>'+
-      '<li>Goal 2: '+blank(260)+' — progress/status: '+blank(200)+'</li>'+
-      '<li>Goal 3: '+blank(260)+' — progress/status: '+blank(200)+'</li>'+
-    '</ul>'+
-    '<h5>Skills Gained / Notable Changes</h5><p>'+blank(400)+'</p>'+
-    '<h5>Aquatic-Specific Progress</h5><p><i>Comfort/skill progression in water.</i></p><p>'+blank(400)+'</p>'+
-    '<h5>Barriers / Concerns</h5><p>'+blank(400)+'</p>'+
-    '<h5>Plan for Next Period</h5><p>☐ Continue current goals &nbsp; ☐ Modify goals &nbsp; ☐ Add new goal(s) &nbsp; Notes: '+blank(250)+'</p>'+
+    docSec(d,"goals","Goals &amp; Progress",
+      '<ul>'+
+        '<li>Goal 1: '+blank(260)+' — progress/status: '+blank(200)+'</li>'+
+        '<li>Goal 2: '+blank(260)+' — progress/status: '+blank(200)+'</li>'+
+        '<li>Goal 3: '+blank(260)+' — progress/status: '+blank(200)+'</li>'+
+      '</ul>')+
+    docSec(d,"gains","Skills Gained / Notable Changes",'<p>'+blank(400)+'</p>')+
+    docSec(d,"aquatic","Aquatic-Specific Progress",'<p><i>Comfort/skill progression in water.</i></p><p>'+blank(400)+'</p>')+
+    docSec(d,"barriers","Barriers / Concerns",'<p>'+blank(400)+'</p>')+
+    docSec(d,"plan","Plan for Next Period",'<p>☐ Continue current goals &nbsp; ☐ Modify goals &nbsp; ☐ Add new goal(s) &nbsp; Notes: '+blank(250)+'</p>')+
     '<div class="doc-sig">Therapist signature/credentials: '+blank(220)+' &nbsp; Date: '+blank(100)+'</div>'+
   '</div>';
 }
 function dischargeReportHtml(){
+  var d = "discharge";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Editable template</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — Discharge / Exit Summary</div>'+
@@ -1827,22 +1864,22 @@ function dischargeReportHtml(){
       '<li>Client name: '+blank(200)+' &nbsp; DOB: '+blank(100)+'</li>'+
       '<li>Date of initial evaluation: '+blank(100)+' &nbsp; Date of discharge: '+blank(100)+' &nbsp; Total sessions provided: '+blank(70)+'</li>'+
     '</ul>'+
-    '<h5>Reason for Discharge</h5>'+
-    '<p>☐ Goals met &nbsp; ☐ Family request &nbsp; ☐ Financial/scheduling &nbsp; ☐ Relocation &nbsp; ☐ Other: '+blank(200)+'</p>'+
-    '<h5>Summary of Treatment Course</h5><p>'+blank(400)+'</p>'+
-    '<h5>Progress Toward Goals at Discharge</h5>'+
-    '<ul>'+
-      '<li>Goal 1: '+blank(260)+' — outcome: '+blank(200)+'</li>'+
-      '<li>Goal 2: '+blank(260)+' — outcome: '+blank(200)+'</li>'+
-      '<li>Goal 3: '+blank(260)+' — outcome: '+blank(200)+'</li>'+
-    '</ul>'+
-    '<h5>Current Functional Status Summary</h5><p>'+blank(400)+'</p>'+
-    '<h5>Recommendations / Referrals for Continued Care</h5><p>'+blank(400)+'</p>'+
-    '<h5>Follow-Up Plan</h5><p>'+blank(400)+'</p>'+
+    docSec(d,"reason","Reason for Discharge",'<p>☐ Goals met &nbsp; ☐ Family request &nbsp; ☐ Financial/scheduling &nbsp; ☐ Relocation &nbsp; ☐ Other: '+blank(200)+'</p>')+
+    docSec(d,"summary","Summary of Treatment Course",'<p>'+blank(400)+'</p>')+
+    docSec(d,"progress","Progress Toward Goals at Discharge",
+      '<ul>'+
+        '<li>Goal 1: '+blank(260)+' — outcome: '+blank(200)+'</li>'+
+        '<li>Goal 2: '+blank(260)+' — outcome: '+blank(200)+'</li>'+
+        '<li>Goal 3: '+blank(260)+' — outcome: '+blank(200)+'</li>'+
+      '</ul>')+
+    docSec(d,"status","Current Functional Status Summary",'<p>'+blank(400)+'</p>')+
+    docSec(d,"recommendations","Recommendations / Referrals for Continued Care",'<p>'+blank(400)+'</p>')+
+    docSec(d,"followup","Follow-Up Plan",'<p>'+blank(400)+'</p>')+
     '<div class="doc-sig">Therapist signature/credentials: '+blank(220)+' &nbsp; Date: '+blank(100)+'</div>'+
   '</div>';
 }
 function incidentReportHtml(){
+  var d = "incident";
   return '<div class="prose">'+
     '<div class="doc-eyebrow">Editable template</div>'+
     '<div class="doc-title">'+fillField("practiceName")+' — Incident Report</div>'+
@@ -1852,14 +1889,13 @@ function incidentReportHtml(){
       '<li>Date of incident: '+blank(120)+' &nbsp; Time: '+blank(100)+'</li>'+
       '<li>Location: '+fillField("facilityName")+' — specific area: '+blank(160)+' (pool deck / in water / changing area / other)</li>'+
     '</ul>'+
-    '<h5>Type of Incident (check all that apply)</h5>'+
-    '<p>☐ Slip/fall &nbsp; ☐ Water aspiration/swallowing &nbsp; ☐ Near-submersion &nbsp; ☐ Seizure &nbsp; ☐ Allergic reaction &nbsp; ☐ Equipment-related &nbsp; ☐ Behavioral/emotional dysregulation &nbsp; ☐ Other: '+blank(180)+'</p>'+
-    '<h5>Description of What Happened</h5><p><i>Facts observed, in order — not interpretation or blame.</i></p><p>'+blank(400)+'</p>'+
-    '<h5>Immediate Action Taken</h5><p>☐ First aid provided &nbsp; ☐ Lifeguard/facility staff notified &nbsp; ☐ 911 called &nbsp; ☐ Session stopped &nbsp; Details: '+blank(260)+'</p>'+
-    '<h5>Witnesses</h5><p>'+blank(300)+'</p>'+
-    '<h5>Parent/Guardian Notification</h5><p>Notified by: '+blank(140)+' &nbsp; Method/time: '+blank(160)+' &nbsp; Parent response: '+blank(220)+'</p>'+
-    '<h5>Medical Follow-Up Needed?</h5><p>☐ No &nbsp; ☐ Yes — details: '+blank(260)+'</p>'+
-    '<h5>Follow-Up / Prevention Notes</h5><p>Any change to the session plan, environment, or precautions going forward.</p><p>'+blank(300)+'</p>'+
+    docSec(d,"type","Type of Incident (check all that apply)",'<p>☐ Slip/fall &nbsp; ☐ Water aspiration/swallowing &nbsp; ☐ Near-submersion &nbsp; ☐ Seizure &nbsp; ☐ Allergic reaction &nbsp; ☐ Equipment-related &nbsp; ☐ Behavioral/emotional dysregulation &nbsp; ☐ Other: '+blank(180)+'</p>')+
+    docSec(d,"description","Description of What Happened",'<p><i>Facts observed, in order — not interpretation or blame.</i></p><p>'+blank(400)+'</p>')+
+    docSec(d,"action","Immediate Action Taken",'<p>☐ First aid provided &nbsp; ☐ Lifeguard/facility staff notified &nbsp; ☐ 911 called &nbsp; ☐ Session stopped &nbsp; Details: '+blank(260)+'</p>')+
+    docSec(d,"witnesses","Witnesses",'<p>'+blank(300)+'</p>')+
+    docSec(d,"notification","Parent/Guardian Notification",'<p>Notified by: '+blank(140)+' &nbsp; Method/time: '+blank(160)+' &nbsp; Parent response: '+blank(220)+'</p>')+
+    docSec(d,"medical","Medical Follow-Up Needed?",'<p>☐ No &nbsp; ☐ Yes — details: '+blank(260)+'</p>')+
+    docSec(d,"prevention","Follow-Up / Prevention Notes",'<p>Any change to the session plan, environment, or precautions going forward.</p><p>'+blank(300)+'</p>')+
     '<div class="doc-sig">Therapist signature/credentials: '+blank(220)+' &nbsp; Date completed: '+blank(100)+'</div>'+
   '</div>';
 }
@@ -2069,6 +2105,12 @@ content.addEventListener("click", function(e){
   if((t = e.target.closest('[data-action="toggleLegalDoc"]'))){
     var dkey = "doc_"+t.getAttribute("data-doc");
     legalOpenState[dkey] = !legalOpenState[dkey];
+    renderView();
+    return;
+  }
+  if((t = e.target.closest('[data-action="toggleDocSec"]'))){
+    var secKey = t.getAttribute("data-secid");
+    legalOpenState["sec_"+secKey] = !secIsOpen(secKey);
     renderView();
     return;
   }
