@@ -198,6 +198,21 @@
   .week-card.open .chev{transform:rotate(90deg)}
   .week-body{display:none;padding:0 18px 20px;border-top:1px solid var(--border-soft)}
   .week-card.open .week-body{display:block}
+  /* Native <details>/<summary> variant (Legal & Launch Kit): the browser
+     handles show/hide on its own via the "open" attribute — no class, no
+     click handler, no JS re-render involved in the toggle itself. These
+     rules just restyle the native disclosure triangle away and drive the
+     chevron rotation off the real "open" attribute instead of a JS-set
+     class, so it can't fall out of sync with what's actually rendered. */
+  summary{list-style:none;cursor:pointer}
+  summary::-webkit-details-marker{display:none}
+  summary::marker{display:none}
+  details.week-card{padding:0}
+  details.week-card > .week-body{display:none}
+  details.week-card[open] > .week-body{display:block}
+  details.week-card[open] > summary.week-head .chev{transform:rotate(90deg)}
+  details.week-notes[open] > .chev,
+  details.week-notes[open] > summary .chev{transform:rotate(90deg)}
   .week-meta{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
   .week-meta .block b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:4px}
   .week-meta .block p{margin:0;font-size:13.5px}
@@ -1346,17 +1361,23 @@ function legalStepList(items, extraClass){
 function legalStepsDone(items){
   return items.filter(function(it){ return state.legal && state.legal.checks && state.legal.checks[it.id]; }).length;
 }
+// Native <details>/<summary> — the browser handles open/close entirely on
+// its own (no click handler, no re-render needed to toggle). A capturing
+// "toggle" listener (see EVENTS section) mirrors the resulting open/closed
+// state back into legalOpenState purely so it survives the next re-render
+// (e.g. the 5s background poll); the actual visible toggle never depends on
+// that JS running at all, unlike the old div+click-handler version.
 function legalCollapseCard(key, num, title, blurb, headExtra, bodyHtml){
   var open = !!legalOpenState[key];
-  return '<div class="week-card'+(open?" open":"")+'" id="legal_'+key+'">'+
-    '<div class="week-head" data-action="toggleLegalSection" data-key="'+key+'">'+
+  return '<details class="week-card" id="legal_'+key+'" data-legalkey="'+key+'"'+(open?" open":"")+'>'+
+    '<summary class="week-head">'+
       '<div class="week-num">'+num+'</div>'+
       '<div class="week-head-title"><b>'+esc(title)+'</b><div class="helptext" style="margin-top:2px">'+blurb+'</div></div>'+
       (headExtra||'')+
       '<svg class="chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
-    '</div>'+
+    '</summary>'+
     '<div class="week-body">'+bodyHtml+'</div>'+
-  '</div>';
+  '</details>';
 }
 
 function einSectionHtml(){
@@ -1874,18 +1895,17 @@ var CLINICAL_TEMPLATES = [
 
 function legalNotesBlock(key, label){
   var noteRec = (state.legal && state.legal.notes && state.legal.notes[key]) || {};
-  var open = !!legalOpenState["notes_"+key];
+  var legalKey = "notes_"+key;
+  var open = !!legalOpenState[legalKey];
   var hasText = !!(noteRec.text && noteRec.text.trim());
-  var head = '<div class="week-notes" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-soft)">'+
-    '<div data-action="toggleLegalNotes" data-key="'+key+'" style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;user-select:none">'+
-      '<label class="field-label" style="margin:0;cursor:pointer">Notes — what needs fixing'+
+  return '<details class="week-notes" data-legalkey="'+legalKey+'"'+(open?" open":"")+' style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-soft)">'+
+    '<summary style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;user-select:none">'+
+      '<span class="field-label" style="margin:0">Notes — what needs fixing'+
         (hasText?' <span class="pill notstarted" style="font-size:10px;padding:1px 7px;margin-left:4px">has notes</span>':'')+
         ' <span class="save-hint" id="saveHint_legalnote_'+key+'"></span>'+
-      '</label>'+
-      '<svg width="14" height="14" viewBox="0 0 16 16" style="flex:none;color:var(--text-faint);transition:transform .15s ease;'+(open?"transform:rotate(90deg)":"")+'"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
-    '</div>';
-  if(!open) return head+'</div>';
-  return head+
+      '</span>'+
+      '<svg class="chev" width="14" height="14" viewBox="0 0 16 16" style="flex:none;color:var(--text-faint)"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+    '</summary>'+
     '<div style="margin-top:10px">'+
       '<textarea class="field editable" data-action="legalNote" data-key="'+key+'" data-label="'+esc(label)+'" placeholder="Anything to change before this is final... (Enter publishes to the Notes tab, Shift+Enter for a new line)">'+esc(noteRec.text||"")+'</textarea>'+
       (noteRec.by ? '<div class="notes-byline">Last edited by '+esc(noteRec.by)+(noteRec.at?" · "+timeAgo(noteRec.at):"")+'</div>' : '')+
@@ -1893,7 +1913,7 @@ function legalNotesBlock(key, label){
         '<button class="btn small primary" data-action="publishLegalNote" data-key="'+key+'" data-label="'+esc(label)+'" '+(identity?"":"disabled")+' title="'+(identity?"Post this note to the Notes tab":"Set your name in the sidebar first")+'">Publish to Notes →</button>'+
       '</div>'+
     '</div>'+
-  '</div>';
+  '</details>';
 }
 
 function legalDocGroupHtml(sectionKey, num, title, blurb, disclaimerText, docs, checkboxLabel){
@@ -1901,14 +1921,15 @@ function legalDocGroupHtml(sectionKey, num, title, blurb, disclaimerText, docs, 
   var badge = '<span class="pill '+(doneCount===docs.length?"complete":doneCount?"progress":"notstarted")+'" style="flex:none;margin-right:10px">'+doneCount+' / '+docs.length+'</span>';
   var cards = docs.map(function(d){
     var checkKey = sectionKey+"_"+d.id;
-    var open = !!legalOpenState["doc_"+checkKey];
+    var legalKey = "doc_"+checkKey;
+    var open = !!legalOpenState[legalKey];
     var done = !!(state.legal && state.legal.checks && state.legal.checks[checkKey]);
-    return '<div class="week-card'+(open?" open":"")+'">'+
-      '<div class="week-head" data-action="toggleLegalDoc" data-doc="'+checkKey+'">'+
+    return '<details class="week-card" data-legalkey="'+legalKey+'"'+(open?" open":"")+'>'+
+      '<summary class="week-head">'+
         '<div class="week-head-title"><b>'+esc(d.label)+'</b><div class="helptext" style="margin-top:2px">'+esc(d.blurb)+'</div></div>'+
         '<span class="pill '+(done?"complete":"notstarted")+'" style="flex:none">'+(done?"Done":"Not yet")+'</span>'+
         '<svg class="chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
-      '</div>'+
+      '</summary>'+
       '<div class="week-body">'+
         d.render()+
         '<div class="task-item" style="margin-top:14px;align-items:center">'+
@@ -1917,7 +1938,7 @@ function legalDocGroupHtml(sectionKey, num, title, blurb, disclaimerText, docs, 
         '</div>'+
         legalNotesBlock(checkKey, d.label)+
       '</div>'+
-    '</div>';
+    '</details>';
   }).join("");
   return legalCollapseCard(sectionKey,num,title,blurb,badge,
     legalDisclaimer(disclaimerText)+
@@ -2093,26 +2114,8 @@ content.addEventListener("click", function(e){
     renderView();
     return;
   }
-  if((t = e.target.closest('[data-action="toggleLegalSection"]'))){
-    var lkey = t.getAttribute("data-key");
-    legalOpenState[lkey] = !legalOpenState[lkey];
-    renderView();
-    return;
-  }
-  if((t = e.target.closest('[data-action="toggleLegalDoc"]'))){
-    var dkey = "doc_"+t.getAttribute("data-doc");
-    legalOpenState[dkey] = !legalOpenState[dkey];
-    renderView();
-    return;
-  }
   if((t = e.target.closest('[data-action="publishLegalNote"]'))){
     handlePublishLegalNote(t.getAttribute("data-key"), t.getAttribute("data-label"));
-    return;
-  }
-  if((t = e.target.closest('[data-action="toggleLegalNotes"]'))){
-    var nkey = "notes_"+t.getAttribute("data-key");
-    legalOpenState[nkey] = !legalOpenState[nkey];
-    renderView();
     return;
   }
   if((t = e.target.closest('[data-action="setStage"]'))){
@@ -2195,6 +2198,19 @@ content.addEventListener("click", function(e){
     return;
   }
 });
+
+// Mirrors a native <details> element's open/closed state into
+// legalOpenState purely so it survives the next re-render (e.g. the 5s
+// background poll). The "toggle" event doesn't bubble, but a capturing
+// listener on an ancestor still sees it on the way down to its target,
+// which is all this needs — no renderView() call here, since the toggle
+// itself already happened natively with zero JS involved.
+content.addEventListener("toggle", function(e){
+  var el = e.target;
+  if(el && el.tagName==="DETAILS" && el.hasAttribute("data-legalkey")){
+    legalOpenState[el.getAttribute("data-legalkey")] = el.open;
+  }
+}, true);
 
 content.addEventListener("change", function(e){
   var t = e.target;
